@@ -1,3 +1,3 @@
 .PHONY: test
 test:
-	go test -fullpath ./internal/byteconverter
+	go test -fullpath ./...
