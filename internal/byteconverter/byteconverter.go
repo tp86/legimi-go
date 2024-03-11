@@ -32,7 +32,7 @@ func (n *number[N]) readBytesFrom(r io.ByteReader) {
 	var value uint64
 	for i := uintptr(0); i < reflect.TypeOf(n.Value).Size(); i++ {
 		b, _ := r.ReadByte()
-		value += uint64(b) >> (i * 8)
+		value += uint64(b) << (i * 8)
 	}
 	n.Value = N(value)
 }
