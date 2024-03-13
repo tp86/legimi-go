@@ -7,7 +7,7 @@ import (
 )
 
 var writingTests = map[string]struct {
-	input    bytesWriterTo
+	input    BytesWriterTo
 	expected []byte
 }{
 	"raw byte":     {&RawByte{1}, []byte{1}},
@@ -47,7 +47,7 @@ func TestWritingSequence(t *testing.T) {
 }
 
 type value interface {
-	bytesReaderFrom
+	BytesReaderFrom
 	value() any
 }
 

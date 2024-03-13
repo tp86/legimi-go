@@ -12,19 +12,19 @@ type numbers interface {
 	uint8 | uint16 | uint32 | uint64
 }
 
-type bytesReaderFrom interface {
-	readBytesFrom(r io.ByteReader)
+type BytesReaderFrom interface {
+	ReadBytesFrom(r io.ByteReader)
 }
 
-type bytesWriterTo interface {
-	writeBytesTo(w io.ByteWriter)
+type BytesWriterTo interface {
+	WriteBytesTo(w io.ByteWriter)
 }
 
 type number[N numbers] struct {
 	Value N
 }
 
-func (n *number[N]) writeBytesTo(w io.ByteWriter) {
+func (n *number[N]) WriteBytesTo(w io.ByteWriter) {
 	value := uint64(n.Value)
 	for i := uintptr(0); i < reflect.TypeOf(n.Value).Size(); i, value = i+1, value>>8 {
 		w.WriteByte(byte(value))
@@ -41,7 +41,7 @@ func readByte(r io.ByteReader) byte {
 	return b
 }
 
-func (n *number[N]) readBytesFrom(r io.ByteReader) {
+func (n *number[N]) ReadBytesFrom(r io.ByteReader) {
 	var value uint64
 	for i := uintptr(0); i < reflect.TypeOf(n.Value).Size(); i++ {
 		value += uint64(readByte(r)) << (i * 8)
@@ -64,19 +64,19 @@ type numberWithLength[N numbers, L lengths] struct {
 	Value N
 }
 
-func (nl *numberWithLength[N, L]) writeBytesTo(w io.ByteWriter) {
+func (nl *numberWithLength[N, L]) WriteBytesTo(w io.ByteWriter) {
 	l := number[L]{L(reflect.TypeOf(nl.Value).Size())}
-	l.writeBytesTo(w)
+	l.WriteBytesTo(w)
 	n := number[N]{nl.Value}
-	n.writeBytesTo(w)
+	n.WriteBytesTo(w)
 }
 
-func (nl *numberWithLength[N, L]) readBytesFrom(r io.ByteReader) {
+func (nl *numberWithLength[N, L]) ReadBytesFrom(r io.ByteReader) {
 	for i := uintptr(0); i < reflect.TypeOf(L(0)).Size(); i++ {
 		readByte(r)
 	}
 	n := number[N]{}
-	n.readBytesFrom(r)
+	n.ReadBytesFrom(r)
 	nl.Value = n.Value
 }
 
@@ -91,18 +91,18 @@ type bstring[L lengths] struct {
 	Value string
 }
 
-func (bs *bstring[L]) writeBytesTo(w io.ByteWriter) {
+func (bs *bstring[L]) WriteBytesTo(w io.ByteWriter) {
 	valueLength := len(bs.Value)
 	l := number[L]{L(valueLength)}
-	l.writeBytesTo(w)
+	l.WriteBytesTo(w)
 	for i := 0; i < valueLength; i++ {
 		w.WriteByte(bs.Value[i])
 	}
 }
 
-func (bs *bstring[L]) readBytesFrom(r io.ByteReader) {
+func (bs *bstring[L]) ReadBytesFrom(r io.ByteReader) {
 	l := &number[L]{}
-	l.readBytesFrom(r)
+	l.ReadBytesFrom(r)
 	s := strings.Builder{}
 	for i := 0; i < int(l.Value); i++ {
 		s.WriteByte(readByte(r))
@@ -116,36 +116,50 @@ type (
 )
 
 type bytesReaderWriter interface {
-	bytesReaderFrom
-	bytesWriterTo
+	BytesReaderFrom
+	BytesWriterTo
 }
 
 type Sequence []bytesReaderWriter
 
-func (s *Sequence) writeBytesTo(w io.ByteWriter) {
+func (s *Sequence) WriteBytesTo(w io.ByteWriter) {
 	for _, v := range *s {
-		v.writeBytesTo(w)
+		v.WriteBytesTo(w)
 	}
 }
 
-func (s *Sequence) readBytesFrom(r io.ByteReader) {
+func (s *Sequence) ReadBytesFrom(r io.ByteReader) {
 	for _, v := range *s {
-		v.readBytesFrom(r)
+		v.ReadBytesFrom(r)
 	}
 }
 
-func WriteBytesTo(w io.ByteWriter, b bytesWriterTo) {
-	b.writeBytesTo(w)
+type Bytes struct {
+	Value []byte
 }
 
-func ReadBytesFrom(r io.ByteReader, b bytesReaderFrom) {
-	b.readBytesFrom(r)
+func (rb *Bytes) WriteBytesTo(w io.ByteWriter) {
+	(&RawInt{uint32(len(rb.Value))}).WriteBytesTo(w)
+	for _, b := range rb.Value {
+		w.WriteByte(b)
+	}
 }
 
-type ToBytesMapper interface {
-	MapToBytes() bytesWriterTo
+func (rb *Bytes) ReadBytesFrom(r io.ByteReader) {
+	l := &RawInt{}
+	l.ReadBytesFrom(r)
+	if rb.Value == nil {
+		rb.Value = make([]byte, l.Value)
+	}
+	for i := uint32(0); i < l.Value; i++ {
+		rb.Value[i] = readByte(r)
+	}
 }
 
-type FromBytesMapper interface {
-	MapFromBytes() bytesReaderFrom
+func WriteBytesTo(w io.ByteWriter, b BytesWriterTo) {
+	b.WriteBytesTo(w)
+}
+
+func ReadBytesFrom(r io.ByteReader, b BytesReaderFrom) {
+	b.ReadBytesFrom(r)
 }
