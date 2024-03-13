@@ -24,12 +24,10 @@ func (r Registration) Type() packet.Type {
 
 func (r Registration) ToBytes() []byte {
 	buf := new(bytes.Buffer)
-	(&bc.Sequence{
-		&bc.RawLong{Value: 0},
-		&bc.ShortString{Value: r.Login},
-		&bc.ShortString{Value: r.Password},
-		&bc.ShortString{Value: wrapSerialNo(r.KindleSerialNo)},
-		&bc.RawShort{Value: 0},
-	}).WriteBytesTo(buf)
+	bc.WriteAsBytesTo[bc.RawLong](buf, 0)
+	bc.WriteAsBytesTo[bc.ShortString](buf, r.Login)
+	bc.WriteAsBytesTo[bc.ShortString](buf, r.Password)
+	bc.WriteAsBytesTo[bc.ShortString](buf, wrapSerialNo(r.KindleSerialNo))
+	bc.WriteAsBytesTo[bc.RawShort](buf, 0)
 	return buf.Bytes()
 }

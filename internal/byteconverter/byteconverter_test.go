@@ -2,6 +2,7 @@ package byteconverter
 
 import (
 	"bytes"
+	"io"
 	"slices"
 	"testing"
 )
@@ -36,11 +37,24 @@ func TestWritingBytes(t *testing.T) {
 	}
 }
 
-func TestWritingSequence(t *testing.T) {
+type custom struct {
+	i *Int
+	b *RawByte
+	s *RawShort
+}
+
+func (c *custom) WriteBytesTo(w io.ByteWriter) {
+	c.i.WriteBytesTo(w)
+	c.b.WriteBytesTo(w)
+	c.s.WriteBytesTo(w)
+}
+
+func TestWritingCustomStruct(t *testing.T) {
 	buf := new(bytes.Buffer)
-	WriteBytesTo(buf, &Sequence{&RawLong{0}, &Byte{3}})
+	c := custom{&Int{0}, &RawByte{1}, &RawShort{3}}
+	WriteBytesTo(buf, &c)
 	bs := buf.Bytes()
-	expected := []byte{0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 3}
+	expected := []byte{4, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0}
 	if !slices.Equal(bs, expected) {
 		t.Errorf("writing sequence: expected %v, got %v", expected, bs)
 	}
@@ -93,13 +107,16 @@ func TestReadingBytes(t *testing.T) {
 	}
 }
 
-func TestReadingSequence(t *testing.T) {
+func (c *custom) ReadBytesFrom(r io.ByteReader) {
+	c.i.ReadBytesFrom(r)
+	c.b.ReadBytesFrom(r)
+	c.s.ReadBytesFrom(r)
+}
+func TestReadingCustomStruct(t *testing.T) {
 	buf := bytes.NewBuffer([]byte{4, 0, 0, 0, 10, 0, 0, 0, 2, 3, 0})
-	i := &Int{}
-	b := &RawByte{}
-	s := &RawShort{}
-	ReadBytesFrom(buf, &Sequence{i, b, s})
-	expected := map[value]any{i: uint32(10), b: byte(2), s: uint16(3)}
+	c := custom{&Int{}, &RawByte{}, &RawShort{}}
+	ReadBytesFrom(buf, &c)
+	expected := map[value]any{c.i: uint32(10), c.b: byte(2), c.s: uint16(3)}
 	for v, result := range expected {
 		if v.value() != result {
 			t.Errorf("reading sequence: expected %v, got %v", v.value(), result)

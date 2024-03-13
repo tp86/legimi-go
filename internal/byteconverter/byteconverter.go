@@ -124,20 +124,6 @@ type bytesReaderWriter interface {
 	BytesWriterTo
 }
 
-type Sequence []bytesReaderWriter
-
-func (s *Sequence) WriteBytesTo(w io.ByteWriter) {
-	for _, v := range *s {
-		v.WriteBytesTo(w)
-	}
-}
-
-func (s *Sequence) ReadBytesFrom(r io.ByteReader) {
-	for _, v := range *s {
-		v.ReadBytesFrom(r)
-	}
-}
-
 type Bytes struct {
 	Value []byte
 }
@@ -186,4 +172,25 @@ func WriteBytesTo(w io.ByteWriter, b BytesWriterTo) {
 
 func ReadBytesFrom(r io.ByteReader, b BytesReaderFrom) {
 	b.ReadBytesFrom(r)
+}
+
+type bytesWriterSetter[V any] interface {
+	newWriterTo(v V) BytesWriterTo
+}
+
+func (n number[N]) newWriterTo(v N) BytesWriterTo {
+	return &number[N]{v}
+}
+
+func (nl numberWithLength[N, L]) newWriterTo(v N) BytesWriterTo {
+	return &numberWithLength[N, L]{v}
+}
+
+func (bs bstring[L]) newWriterTo(v string) BytesWriterTo {
+	return &bstring[L]{v}
+}
+
+func WriteAsBytesTo[V bytesWriterSetter[T], T any](w io.ByteWriter, v T) {
+	var s V
+	s.newWriterTo(v).WriteBytesTo(w)
 }
