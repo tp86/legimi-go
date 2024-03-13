@@ -71,10 +71,14 @@ func (nl *numberWithLength[N, L]) WriteBytesTo(w io.ByteWriter) {
 	n.WriteBytesTo(w)
 }
 
-func (nl *numberWithLength[N, L]) ReadBytesFrom(r io.ByteReader) {
-	for i := uintptr(0); i < reflect.TypeOf(L(0)).Size(); i++ {
+func skipBytes(r io.ByteReader, bytesToSkip int) {
+	for i := 0; i < bytesToSkip; i++ {
 		readByte(r)
 	}
+}
+
+func (nl *numberWithLength[N, L]) ReadBytesFrom(r io.ByteReader) {
+	skipBytes(r, int(reflect.TypeOf(L(0)).Size()))
 	n := number[N]{}
 	n.ReadBytesFrom(r)
 	nl.Value = n.Value
@@ -153,6 +157,26 @@ func (rb *Bytes) ReadBytesFrom(r io.ByteReader) {
 	}
 	for i := uint32(0); i < l.Value; i++ {
 		rb.Value[i] = readByte(r)
+	}
+}
+
+type Dictionary struct {
+	Value map[uint16]bytesReaderWriter
+}
+
+func (d *Dictionary) ReadBytesFrom(r io.ByteReader) {
+	key := &RawShort{}
+	key.ReadBytesFrom(r)
+	count := key.Value
+	length := &RawInt{}
+	for i := uint16(0); i < count; i++ {
+		key.ReadBytesFrom(r)
+		if targetValue, ok := d.Value[key.Value]; ok {
+			targetValue.ReadBytesFrom(r)
+		} else {
+			length.ReadBytesFrom(r)
+			skipBytes(r, int(length.Value))
+		}
 	}
 }
 
