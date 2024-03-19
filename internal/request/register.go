@@ -1,33 +1,61 @@
 package request
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 
-	bc "github.com/tp86/legimi-go/internal/byteconverter"
-	"github.com/tp86/legimi-go/internal/packet"
+	"github.com/tp86/legimi-go/internal/protocol"
 )
 
-type Registration struct {
-	Login          string
-	Password       string
-	KindleSerialNo string
+type Request interface {
+	protocol.Encoder
+	Type() uint16
 }
 
-func wrapSerialNo(serialNo string) string {
-	return fmt.Sprintf("Kindle||Kindle||%s||Kindle", serialNo)
+type loginData struct {
+	login    string
+	password string
 }
 
-func (r Registration) Type() packet.Type {
-	return RegistrationRequest
+type Register struct {
+	loginData
+	kindleSerialNo string
 }
 
-func (r Registration) ToBytes() []byte {
-	buf := new(bytes.Buffer)
-	bc.WriteAsBytesTo[bc.RawLong](buf, 0)
-	bc.WriteAsBytesTo[bc.ShortString](buf, r.Login)
-	bc.WriteAsBytesTo[bc.ShortString](buf, r.Password)
-	bc.WriteAsBytesTo[bc.ShortString](buf, wrapSerialNo(r.KindleSerialNo))
-	bc.WriteAsBytesTo[bc.RawShort](buf, 0)
-	return buf.Bytes()
+func NewRegisterRequest(login, password, kindleSerialNo string) Register {
+	return Register{
+		loginData:      loginData{login: login, password: password},
+		kindleSerialNo: fmt.Sprintf("Kindle||Kindle||%s||Kindle", kindleSerialNo),
+	}
+}
+
+func (r Register) Encode(w io.Writer) error {
+	for _, value := range []any{
+		uint64(0),
+		uint16(len(r.login)),
+		r.login,
+		uint16(len(r.password)),
+		r.password,
+		uint16(len(r.kindleSerialNo)),
+		r.kindleSerialNo,
+		[]uint8{},
+	} {
+		err := protocol.Encode(w, value)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r Register) EncodedLength() int {
+	return protocol.U64Length +
+		protocol.U16Length + protocol.EncodedLength(r.login) +
+		protocol.U16Length + protocol.EncodedLength(r.password) +
+		protocol.U16Length + protocol.EncodedLength(r.kindleSerialNo) +
+		protocol.EncodedLength([]uint8{})
+}
+
+func (r Register) Type() uint16 {
+	return 0x0042
 }
