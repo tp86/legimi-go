@@ -22,11 +22,11 @@ func NewRegisterRequest(login, password, kindleSerialNo string) Register {
 func (r Register) Encode(w io.Writer) error {
 	for _, value := range []any{
 		uint64(0),
-		uint16(len(r.login)),
+		uint16(protocol.EncodedLength(r.login)),
 		r.login,
-		uint16(len(r.password)),
+		uint16(protocol.EncodedLength(r.password)),
 		r.password,
-		uint16(len(r.kindleSerialNo)),
+		uint16(protocol.EncodedLength(r.kindleSerialNo)),
 		r.kindleSerialNo,
 		[]uint8{},
 	} {

@@ -44,6 +44,8 @@ func EncodedLength(value any) int {
 	switch value := value.(type) {
 	case Encoder:
 		return value.EncodedLength()
+	case map[Key]any:
+		return mapLength(value)
 	case []Encoder:
 		return arrayLength(value)
 	case []uint8:
@@ -123,4 +125,12 @@ func encodeMap(w io.Writer, values map[Key]any) error {
 		}
 	}
 	return nil
+}
+
+func mapLength(m map[Key]any) int {
+	totalLength := U16Length
+	for _, value := range m {
+		totalLength += U16Length /*key*/ + U32Length /*length*/ + EncodedLength(value)
+	}
+	return totalLength
 }

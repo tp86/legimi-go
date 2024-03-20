@@ -75,3 +75,24 @@ func TestSessionRequestEncoding(t *testing.T) {
 		bytesRead += 4 + length
 	}
 }
+
+func TestBookListRequestEncoding(t *testing.T) {
+	sessionId := "1234567890abcdefghijklmnopqrstuv"
+	expected := []byte{
+		0x11, 0x00, 0x00, 0x00, 0x1a, 0x00, 0x39, 0x00, 0x00, 0x00, 0x02, '1', '2', '3', '4', '5',
+		'6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
+		'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 0x02, 0x0e, 0x00, 0x02, 0x00,
+		0x08, 0x00, 0x04, 0x58, 0x02, 0x0c, 0x00, 0x01, 0x00, 0x03, 0x00, 0x04, 0x00, 0x00, 0x00, 0xf4,
+		0x01, 0x00, 0x00,
+	}
+	buf := new(bytes.Buffer)
+	listBooksRequest := request.BookList{SessionId: sessionId}
+	err := packet.Encode(buf, listBooksRequest)
+	if err != nil {
+		t.Fatalf("encoding error: %v", err)
+	}
+	b := buf.Bytes()
+	if !slices.Equal(b, expected) {
+		t.Errorf("list books request encoding: expected %v, got %v", expected, b)
+	}
+}
