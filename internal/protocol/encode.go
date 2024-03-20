@@ -13,6 +13,8 @@ type Encoder interface {
 
 func Encode(w io.Writer, value any) error {
 	switch value := value.(type) {
+	case Encoder:
+		return value.Encode(w)
 	case []uint8:
 		return encodeArray(w, value)
 	case []uint16:
@@ -27,8 +29,6 @@ func Encode(w io.Writer, value any) error {
 		return encodeArray(w, value)
 	case []any:
 		return encodeArray(w, value)
-	case Encoder:
-		return value.Encode(w)
 	case uint8, uint16, uint32, uint64:
 		return encode(w, value)
 	case string:
@@ -40,6 +40,10 @@ func Encode(w io.Writer, value any) error {
 
 func EncodedLength(value any) int {
 	switch value := value.(type) {
+	case Encoder:
+		return value.EncodedLength()
+	case []Encoder:
+		return arrayLength(value)
 	case []uint8:
 		return arrayLength(value)
 	case []uint16:
@@ -48,14 +52,10 @@ func EncodedLength(value any) int {
 		return arrayLength(value)
 	case []uint64:
 		return arrayLength(value)
-	case []Encoder:
-		return arrayLength(value)
 	case []string:
 		return arrayLength(value)
 	case []any:
 		return arrayLength(value)
-	case Encoder:
-		return value.EncodedLength()
 	case uint8:
 		return U8Length
 	case uint16:
@@ -95,20 +95,4 @@ func arrayLength[T any](values []T) int {
 		length += EncodedLength(value)
 	}
 	return length
-}
-
-type WithLength struct {
-	Value any
-}
-
-func (wl WithLength) Encode(w io.Writer) error {
-	err := Encode(w, uint32(EncodedLength(wl.Value)))
-	if err != nil {
-		return err
-	}
-	return Encode(w, wl.Value)
-}
-
-func (wl WithLength) EncodedLength() int {
-	return U32Length + EncodedLength(wl.Value)
 }

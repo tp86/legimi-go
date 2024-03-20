@@ -2,7 +2,6 @@ package internal_test
 
 import (
 	"bytes"
-	"fmt"
 	"slices"
 	"testing"
 
@@ -23,11 +22,9 @@ func TestRegisterRequestEncoding(t *testing.T) {
 	}
 	buf := new(bytes.Buffer)
 	regReq := request.NewRegisterRequest(input.login, input.password, input.serial)
-	packet := packet.Packet{Req: regReq}
-	err := packet.Encode(buf)
+	err := packet.Encode(buf, regReq)
 	if err != nil {
-		fmt.Println(err)
-		return
+		t.Fatalf("encoding error: %v", err)
 	}
 	b := buf.Bytes()
 	if !slices.Equal(b, expected) {

@@ -7,11 +7,6 @@ import (
 	"github.com/tp86/legimi-go/internal/protocol"
 )
 
-type Request interface {
-	protocol.Encoder
-	Type() uint16
-}
-
 type loginData struct {
 	login    string
 	password string
