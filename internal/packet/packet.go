@@ -11,7 +11,7 @@ import (
 
 func Encode(w io.Writer, req request.Request) error {
 	for _, value := range []any{
-		uint32(17),
+		protocol.Version,
 		req.Type(),
 		protocol.WithLength{Value: req},
 	} {

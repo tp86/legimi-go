@@ -14,7 +14,7 @@ func Decode(r io.Reader, value any) (int, error) {
 	switch value := value.(type) {
 	case Decoder:
 		return value.Decode(r)
-	case map[uint16]any:
+	case map[Key]any:
 		return decodeMap(r, value)
 	case *uint8:
 		return U8Length, decode(r, value)
@@ -52,7 +52,7 @@ func decode(r io.Reader, value any) error {
 	return binary.Read(r, binary.LittleEndian, value)
 }
 
-func decodeMap(r io.Reader, value map[uint16]any) (int, error) {
+func decodeMap(r io.Reader, value map[Key]any) (int, error) {
 	var bytesRead int
 	var count uint16
 	bytesRead, err := Decode(r, &count)

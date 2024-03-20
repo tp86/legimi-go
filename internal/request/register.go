@@ -7,11 +7,6 @@ import (
 	"github.com/tp86/legimi-go/internal/protocol"
 )
 
-type loginData struct {
-	login    string
-	password string
-}
-
 type Register struct {
 	loginData
 	kindleSerialNo string

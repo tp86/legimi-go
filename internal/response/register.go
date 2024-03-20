@@ -7,12 +7,12 @@ import (
 )
 
 type Register struct {
-	DeviceId uint64
+	KindleId uint64
 }
 
 func (reg *Register) Decode(r io.Reader) (int, error) {
-	dict := map[uint16]any{
-		6: &reg.DeviceId,
+	dict := map[protocol.Key]any{
+		6: &reg.KindleId,
 	}
 	return protocol.Decode(r, dict)
 }
