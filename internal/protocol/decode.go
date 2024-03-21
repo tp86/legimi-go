@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"reflect"
 )
 
 type Decoder interface {
@@ -25,7 +26,12 @@ func Decode(r io.Reader, value any) (int, error) {
 	case *uint64:
 		return U64Length, decode(r, value)
 	default:
-		return 0, fmt.Errorf("decoding in unsupported for type %T", value)
+		// special handling of pointers to slices
+		refValue := reflect.ValueOf(value)
+		if refValue.Kind() == reflect.Pointer && refValue.Elem().Kind() == reflect.Slice {
+			return decodeArray(r, refValue)
+		}
+		return 0, fmt.Errorf("decoding is unsupported for type %T", value)
 	}
 }
 
@@ -84,6 +90,25 @@ func decodeMap(r io.Reader, value map[Key]any) (int, error) {
 			if err != nil {
 				return bytesRead, err
 			}
+		}
+	}
+	return bytesRead, err
+}
+
+func decodeArray(r io.Reader, values reflect.Value) (int, error) {
+	var bytesRead int
+	var count uint16
+	bytesRead, err := Decode(r, &count)
+	if err != nil {
+		return bytesRead, err
+	}
+	// TODO grow values
+	for i := uint16(0); i < count; i++ {
+		val := reflect.New(values.Elem().Type().Elem()).Interface()
+		n, err := Decode(r, val)
+		bytesRead += n
+		if err != nil {
+			return bytesRead, err
 		}
 	}
 	return bytesRead, err

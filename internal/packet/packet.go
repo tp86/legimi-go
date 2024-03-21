@@ -35,6 +35,9 @@ func Decode(r io.Reader, resp response.Response) error {
 	}
 	var packetLength uint32
 	protocol.Decode(r, &packetLength)
+	if packetLength == 0 {
+		return fmt.Errorf("empty packet body")
+	}
 	bytesRead, err := protocol.Decode(r, resp)
 	if err != nil {
 		return fmt.Errorf("decoding error: %v", err)
