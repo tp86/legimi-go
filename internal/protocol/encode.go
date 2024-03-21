@@ -17,6 +17,8 @@ func Encode(w io.Writer, value any) error {
 		return value.Encode(w)
 	case map[Key]any:
 		return encodeMap(w, value)
+	case []Encoder:
+		return encodeArray(w, value)
 	case []uint8:
 		return encodeArray(w, value)
 	case []uint16:
@@ -24,8 +26,6 @@ func Encode(w io.Writer, value any) error {
 	case []uint32:
 		return encodeArray(w, value)
 	case []uint64:
-		return encodeArray(w, value)
-	case []Encoder:
 		return encodeArray(w, value)
 	case []string:
 		return encodeArray(w, value)
@@ -73,14 +73,6 @@ func EncodedLength(value any) int {
 	default:
 		return 0
 	}
-}
-
-func MapEncodedLength(values []int) int {
-	totalLength := U16Length
-	for _, value := range values {
-		totalLength += U16Length /*key*/ + U32Length /*length*/ + value
-	}
-	return totalLength
 }
 
 func encode(w io.Writer, value any) error {

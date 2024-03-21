@@ -19,7 +19,15 @@ func NewSessionRequest(login, password string, kindleId uint64) Session {
 }
 
 func (s Session) Encode(w io.Writer) error {
-	dict := map[protocol.Key]any{
+	return protocol.Encode(w, s.asMap())
+}
+
+func (s Session) EncodedLength() int {
+	return protocol.EncodedLength(s.asMap())
+}
+
+func (s Session) asMap() map[protocol.Key]any {
+	return map[protocol.Key]any{
 		0: s.login,
 		1: s.password,
 		2: s.kindleId,
@@ -27,19 +35,6 @@ func (s Session) Encode(w io.Writer) error {
 		4: uint32(0),
 		5: uint64(0),
 	}
-	return protocol.Encode(w, dict)
-}
-
-func (s Session) EncodedLength() int {
-	values := []int{
-		protocol.EncodedLength(s.login),
-		protocol.EncodedLength(s.password),
-		protocol.EncodedLength(s.kindleId),
-		protocol.EncodedLength(protocol.AppVersion),
-		protocol.U32Length,
-		protocol.U64Length,
-	}
-	return protocol.MapEncodedLength(values)
 }
 
 func (s Session) Type() uint16 {
