@@ -32,7 +32,7 @@ func TestRegisterRequestEncoding(t *testing.T) {
 	}
 }
 
-func TestSessionRequestEncoding(t *testing.T) {
+func TestGetSessionRequestEncoding(t *testing.T) {
 	input := struct {
 		login, password string
 		kindleId        uint64
@@ -49,7 +49,7 @@ func TestSessionRequestEncoding(t *testing.T) {
 		5:  {0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 	}
 	buf := new(bytes.Buffer)
-	sessionRequest := request.NewSessionRequest(input.login, input.password, input.kindleId)
+	sessionRequest := request.NewGetSessionRequest(input.login, input.password, input.kindleId)
 	err := packet.Encode(buf, sessionRequest)
 	if err != nil {
 		t.Fatalf("encoding error: %v", err)
@@ -86,12 +86,28 @@ func TestBookListRequestEncoding(t *testing.T) {
 		0x01, 0x00, 0x00,
 	}
 	buf := new(bytes.Buffer)
-	listBooksRequest := request.BookList{SessionId: sessionId}
+	listBooksRequest := request.NewBookListRequest(sessionId)
 	err := packet.Encode(buf, listBooksRequest)
 	if err != nil {
 		t.Fatalf("encoding error: %v", err)
 	}
 	b := buf.Bytes()
+	if !slices.Equal(b, expected) {
+		t.Errorf("list books request encoding: expected %v, got %v", expected, b)
+	}
+	listBooksRequest.NextPage = "12345678"
+	nextPageFilter := []byte{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
+	nextPageFilterLength := uint8(len(nextPageFilter))
+	expected[6] += nextPageFilterLength
+	expected[len(expected)-14] += nextPageFilterLength
+	expected[len(expected)-12] += 1
+	expected = append(expected, nextPageFilter...)
+	buf.Reset()
+	err = packet.Encode(buf, listBooksRequest)
+	if err != nil {
+		t.Fatalf("encoding error: %v", err)
+	}
+	b = buf.Bytes()
 	if !slices.Equal(b, expected) {
 		t.Errorf("list books request encoding: expected %v, got %v", expected, b)
 	}

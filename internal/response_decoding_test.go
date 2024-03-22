@@ -69,3 +69,19 @@ func TestBookListResponseDecoding(t *testing.T) {
 		t.Errorf("book list response decoding: expected %v, got %v", expected, bookListResponse)
 	}
 }
+
+func TestEmptyBookListDecoding(t *testing.T) {
+	input := []byte{
+		0x11, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+	expected := response.BookList{}
+	buf := bytes.NewBuffer(input)
+	var bookListResponse response.BookList
+	err := packet.Decode(buf, &bookListResponse)
+	if err != nil {
+		t.Fatalf("decoding error: %v", err)
+	}
+	if !slices.Equal(bookListResponse, expected) {
+		t.Errorf("empty book list response decoding: expected %v, got %v", expected, bookListResponse)
+	}
+}

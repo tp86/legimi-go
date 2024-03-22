@@ -6,9 +6,9 @@ import (
 	"github.com/tp86/legimi-go/internal/protocol"
 )
 
-type BookList protocol.Array[BookDetails]
+type BookList protocol.Array[BookMetadata]
 
-type BookDetails struct {
+type BookMetadata struct {
 	Id         uint64
 	Title      string
 	Author     string
@@ -24,9 +24,9 @@ func (bl BookList) Type() uint16 {
 func (bl *BookList) Decode(r io.Reader) (int, error) {
 	blSlice := *bl
 	if blSlice == nil {
-		blSlice = make([]BookDetails, 0)
+		blSlice = make([]BookMetadata, 0)
 	}
-	array := protocol.Array[BookDetails](blSlice)
+	array := protocol.Array[BookMetadata](blSlice)
 	n, err := protocol.Decode(r, &array)
 	if err != nil {
 		return n, err
@@ -35,7 +35,7 @@ func (bl *BookList) Decode(r io.Reader) (int, error) {
 	return n, err
 }
 
-func (bd *BookDetails) Decode(r io.Reader) (int, error) {
+func (bm *BookMetadata) Decode(r io.Reader) (int, error) {
 	var bytesRead int
 	// skip type of item, only 7 supported
 	// TODO check type of item
@@ -43,19 +43,19 @@ func (bd *BookDetails) Decode(r io.Reader) (int, error) {
 	if err != nil {
 		return bytesRead, err
 	}
-	n, err := protocol.Decode(r, protocol.WithLength{Value: details{
-		10: &bd.Id,
-		11: &bd.Title,
-		0:  &bd.Author,
-		13: &bd.Version,
-		30: &bd.Downloaded,
-		34: &bd.NextPage,
+	n, err := protocol.Decode(r, protocol.WithLength{Value: metadata{
+		10: &bm.Id,
+		11: &bm.Title,
+		0:  &bm.Author,
+		13: &bm.Version,
+		30: &bm.Downloaded,
+		34: &bm.NextPage,
 	}})
 	bytesRead += n
 	return bytesRead, err
 }
 
-type details protocol.Map
+type metadata protocol.Map
 
 var (
 	emptyLength = protocol.WithLength{}.EncodedLength()
@@ -68,16 +68,16 @@ var (
 	}
 )
 
-func (d details) Decode(r io.Reader) (int, error) {
+func (md metadata) Decode(r io.Reader) (int, error) {
 	var bytesRead int
-	for _, value := range toSkip {
-		n, err := protocol.SkipDecode(r, value)
+	for _, skip := range toSkip {
+		n, err := protocol.SkipDecode(r, skip)
 		bytesRead += n
 		if err != nil {
 			return bytesRead, err
 		}
 	}
-	m := protocol.Map(d)
+	m := protocol.Map(md)
 	n, err := protocol.Decode(r, m)
 	bytesRead += n
 	return bytesRead, err

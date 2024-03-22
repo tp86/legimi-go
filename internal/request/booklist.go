@@ -7,15 +7,21 @@ import (
 )
 
 type BookList struct {
-	SessionId string
-	NextPage  string
+	session
+	NextPage string
+}
+
+func NewBookListRequest(sessionId string) BookList {
+	return BookList{
+		session: session{id: sessionId},
+	}
 }
 
 func (l BookList) Encode(w io.Writer) error {
 	filters := makeFilters(l)
 	for _, value := range []any{
 		uint8(len(filters)),
-		l.SessionId,
+		l.session.id,
 	} {
 		err := protocol.Encode(w, value)
 		if err != nil {
@@ -37,7 +43,7 @@ func (l BookList) EncodedLength() int {
 		filtersLength += protocol.EncodedLength(filter)
 	}
 	return protocol.U8Length +
-		protocol.EncodedLength(l.SessionId) +
+		protocol.EncodedLength(l.session.id) +
 		filtersLength
 }
 
