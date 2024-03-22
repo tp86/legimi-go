@@ -34,13 +34,13 @@ func EncodedLength(value any) int {
 	switch value := value.(type) {
 	case Encoder:
 		return value.EncodedLength()
-	case uint8, bool:
+	case uint8, bool, *uint8, *bool:
 		return U8Length
-	case uint16:
+	case uint16, *uint16:
 		return U16Length
-	case uint32:
+	case uint32, *uint32:
 		return U32Length
-	case uint64:
+	case uint64, *uint64:
 		return U64Length
 	case string:
 		return len(value)

@@ -14,14 +14,8 @@ func Decode(r io.Reader, value any) (int, error) {
 	switch value := value.(type) {
 	case Decoder:
 		return value.Decode(r)
-	case *bool, *uint8:
-		return U8Length, decode(r, value)
-	case *uint16:
-		return U16Length, decode(r, value)
-	case *uint32:
-		return U32Length, decode(r, value)
-	case *uint64:
-		return U64Length, decode(r, value)
+	case *bool, *uint8, *uint16, *uint32, *uint64:
+		return EncodedLength(value), decode(r, value)
 	case *string:
 		return WithLength{Value: value}.Decode(r)
 	default:
