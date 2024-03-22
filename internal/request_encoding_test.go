@@ -112,3 +112,26 @@ func TestBookListRequestEncoding(t *testing.T) {
 		t.Errorf("list books request encoding: expected %v, got %v", expected, b)
 	}
 }
+
+func TestBookDownloadDetailsRequestEncoding(t *testing.T) {
+	sessionId := "1234567890abcdefghijklmnopqrstuv"
+	bookId := uint64(12345678)
+	bookVersion := uint64(4)
+	expected := []byte{
+		0x11, 0x00, 0x00, 0x00, 0xc8, 0x00, 0x40, 0x00, 0x00, 0x00, 0x4e, 0x61, 0xbc, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, '1', '2', '3', '4', '5', '6',
+		'7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+		'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+	buf := new(bytes.Buffer)
+	bookDownloadDetailsRequest := request.NewBookDownloadDetailsRequest(sessionId, bookId, bookVersion)
+	err := packet.Encode(buf, bookDownloadDetailsRequest)
+	if err != nil {
+		t.Fatalf("encoding error: %v", err)
+	}
+	b := buf.Bytes()
+	if !slices.Equal(b, expected) {
+		t.Errorf("book download details request encoding: expected %v, got %v", expected, b)
+	}
+}
