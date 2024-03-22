@@ -11,7 +11,7 @@ type Register struct {
 }
 
 func (reg *Register) Decode(r io.Reader) (int, error) {
-	dict := map[protocol.Key]any{
+	dict := protocol.Map{
 		6: &reg.KindleId,
 	}
 	return protocol.Decode(r, dict)

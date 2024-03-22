@@ -2,24 +2,6 @@ package protocol
 
 import "io"
 
-const (
-	Version    = uint32(17)
-	AppVersion = "1.8.5 Windows"
-)
-
-const (
-	U8Length  = 1
-	U16Length = 2
-	U32Length = 4
-	U64Length = 8
-)
-
-type Key = uint16
-
-type Typed interface {
-	Type() uint16
-}
-
 type WithLength struct {
 	Value any
 }
@@ -42,7 +24,22 @@ func (wl WithLength) Decode(r io.Reader) (int, error) {
 	if err != nil {
 		return bytesRead, err
 	}
-	n, err := DecodeWithLength(r, wl.Value, int(length))
+	n, err := decodeWithLength(r, wl.Value, int(length))
 	bytesRead += n
 	return bytesRead, err
+}
+
+func decodeWithLength(r io.Reader, value any, length int) (int, error) {
+	switch value := value.(type) {
+	case *string:
+		bytes := make([]byte, length)
+		bytesRead, err := r.Read(bytes)
+		if err != nil {
+			return bytesRead, err
+		}
+		*value = string(bytes)
+		return bytesRead, nil
+	default:
+		return Decode(r, value)
+	}
 }

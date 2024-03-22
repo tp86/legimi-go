@@ -26,8 +26,12 @@ func (s Session) EncodedLength() int {
 	return protocol.EncodedLength(s.asMap())
 }
 
-func (s Session) asMap() map[protocol.Key]any {
-	return map[protocol.Key]any{
+func (s Session) Type() uint16 {
+	return 0x0050
+}
+
+func (s Session) asMap() protocol.Map {
+	return protocol.Map{
 		0: s.login,
 		1: s.password,
 		2: s.kindleId,
@@ -35,8 +39,4 @@ func (s Session) asMap() map[protocol.Key]any {
 		4: uint32(0),
 		5: uint64(0),
 	}
-}
-
-func (s Session) Type() uint16 {
-	return 0x0050
 }

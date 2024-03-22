@@ -11,7 +11,7 @@ type Session struct {
 }
 
 func (s *Session) Decode(r io.Reader) (int, error) {
-	dict := map[protocol.Key]any{
+	dict := protocol.Map{
 		7: &s.Id,
 	}
 	return protocol.Decode(r, dict)

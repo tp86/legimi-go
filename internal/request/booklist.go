@@ -72,5 +72,5 @@ func (f filter) EncodedLength() int {
 
 var filters = []filter{
 	{2, 14, uint16(8)},
-	{4, 600, map[protocol.Key]any{3: uint32(500)}},
+	{4, 600, protocol.Map{3: uint32(500)}},
 }

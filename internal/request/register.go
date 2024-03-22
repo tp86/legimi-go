@@ -20,32 +20,50 @@ func NewRegisterRequest(login, password, kindleSerialNo string) Register {
 }
 
 func (r Register) Encode(w io.Writer) error {
-	for _, value := range []any{
-		uint64(0),
-		uint16(protocol.EncodedLength(r.login)),
-		r.login,
-		uint16(protocol.EncodedLength(r.password)),
-		r.password,
-		uint16(protocol.EncodedLength(r.kindleSerialNo)),
-		r.kindleSerialNo,
-		[]uint8{},
-	} {
-		err := protocol.Encode(w, value)
+	err := protocol.Encode(w, emptyId)
+	if err != nil {
+		return err
+	}
+	for _, value := range r.data() {
+		err := protocol.Encode(w, uint16(stringLength(value)))
 		if err != nil {
 			return err
 		}
+		err = protocol.Encode(w, value)
+		if err != nil {
+			return err
+		}
+	}
+	err = protocol.Encode(w, emptyLocale)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
 func (r Register) EncodedLength() int {
-	return protocol.U64Length +
-		protocol.U16Length + protocol.EncodedLength(r.login) +
-		protocol.U16Length + protocol.EncodedLength(r.password) +
-		protocol.U16Length + protocol.EncodedLength(r.kindleSerialNo) +
-		protocol.EncodedLength([]uint8{})
+	var totalLength int
+	totalLength += protocol.EncodedLength(emptyId)
+	for _, s := range r.data() {
+		totalLength += protocol.U16Length + stringLength(s)
+	}
+	totalLength += protocol.EncodedLength(emptyLocale)
+	return totalLength
 }
 
 func (r Register) Type() uint16 {
 	return 0x0042
+}
+
+func stringLength(s string) int {
+	return protocol.EncodedLength(s)
+}
+
+var (
+	emptyId     uint64 = 0
+	emptyLocale        = protocol.Array[uint8]{}
+)
+
+func (r Register) data() []string {
+	return []string{r.login, r.password, r.kindleSerialNo}
 }
