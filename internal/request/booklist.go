@@ -8,9 +8,11 @@ import (
 
 type BookList struct {
 	SessionId string
+	NextPage  string
 }
 
 func (l BookList) Encode(w io.Writer) error {
+	filters := makeFilters(l)
 	for _, value := range []any{
 		uint8(len(filters)),
 		l.SessionId,
@@ -31,7 +33,7 @@ func (l BookList) Encode(w io.Writer) error {
 
 func (l BookList) EncodedLength() int {
 	var filtersLength int
-	for _, filter := range filters {
+	for _, filter := range makeFilters(l) {
 		filtersLength += protocol.EncodedLength(filter)
 	}
 	return protocol.U8Length +
@@ -70,7 +72,14 @@ func (f filter) EncodedLength() int {
 		protocol.U16Length + protocol.EncodedLength(f.Data)
 }
 
-var filters = []filter{
-	{2, 14, uint16(8)},
-	{4, 600, protocol.Map{3: uint32(500)}},
+func makeFilters(l BookList) []filter {
+	data := protocol.Map{3: uint32(500)}
+	if l.NextPage != "" {
+		data[4] = l.NextPage
+	}
+	secondFilter := filter{4, 600, data}
+	return []filter{
+		{2, 14, uint16(8)},
+		secondFilter,
+	}
 }
