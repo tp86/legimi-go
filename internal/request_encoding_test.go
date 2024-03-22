@@ -32,6 +32,28 @@ func TestRegisterRequestEncoding(t *testing.T) {
 	}
 }
 
+func assertMapEqual(t *testing.T, expected map[int][]byte, actual []byte, name string) {
+	expectedHeader := expected[-1]
+	bytesRead := len(expectedHeader)
+	header := actual[:bytesRead]
+	if !slices.Equal(header, expectedHeader) {
+		t.Errorf("%s request header encoding: expected %v, got %v", name, expectedHeader, header)
+	}
+	for bytesRead < len(actual) {
+		keyBytes := actual[bytesRead : bytesRead+2]
+		key := int(keyBytes[0]) + int(keyBytes[1])<<8
+		bytesRead += 2
+		lengthBytes := actual[bytesRead : bytesRead+4]
+		length := int(lengthBytes[0]) + int(lengthBytes[1])<<8 + int(lengthBytes[2])<<16 + int(lengthBytes[3])<<24
+		valueBytes := actual[bytesRead : bytesRead+4+length]
+		expectedValue := expected[key]
+		if !slices.Equal(valueBytes, expectedValue) {
+			t.Errorf("%s request key-value pair encoding: key %d, expected %v, got %v", name, key, expectedValue, valueBytes)
+		}
+		bytesRead += 4 + length
+	}
+}
+
 func TestGetSessionRequestEncoding(t *testing.T) {
 	input := struct {
 		login, password string
@@ -55,25 +77,7 @@ func TestGetSessionRequestEncoding(t *testing.T) {
 		t.Fatalf("encoding error: %v", err)
 	}
 	b := buf.Bytes()
-	expectedHeader := expected[-1]
-	bytesRead := len(expectedHeader)
-	header := b[:bytesRead]
-	if !slices.Equal(header, expectedHeader) {
-		t.Errorf("session request header encoding: expected %v, got %v", expectedHeader, header)
-	}
-	for bytesRead < buf.Len() {
-		keyBytes := b[bytesRead : bytesRead+2]
-		key := int(keyBytes[0]) + int(keyBytes[1])<<8
-		bytesRead += 2
-		lengthBytes := b[bytesRead : bytesRead+4]
-		length := int(lengthBytes[0]) + int(lengthBytes[1])<<8 + int(lengthBytes[2])<<16 + int(lengthBytes[3])<<24
-		valueBytes := b[bytesRead : bytesRead+4+length]
-		expectedValue := expected[key]
-		if !slices.Equal(valueBytes, expectedValue) {
-			t.Errorf("session request key-value pair encoding: key %d, expected %v, got %v", key, expectedValue, valueBytes)
-		}
-		bytesRead += 4 + length
-	}
+	assertMapEqual(t, expected, b, "session")
 }
 
 func TestBookListRequestEncoding(t *testing.T) {
@@ -92,30 +96,13 @@ func TestBookListRequestEncoding(t *testing.T) {
 		t.Fatalf("encoding error: %v", err)
 	}
 	b := buf.Bytes()
-	expectedHeader := expected[-1]
-	bytesRead := len(expectedHeader)
-	header := b[:bytesRead]
-	if !slices.Equal(header, expectedHeader) {
-		t.Errorf("list books request encoding: expected %v, got %v", expectedHeader, header)
-	}
-	for bytesRead < buf.Len() {
-		keyBytes := b[bytesRead : bytesRead+2]
-		key := int(keyBytes[0]) + int(keyBytes[1])<<8
-		bytesRead += 2
-		lengthBytes := b[bytesRead : bytesRead+4]
-		length := int(lengthBytes[0]) + int(lengthBytes[1])<<8 + int(lengthBytes[2])<<16 + int(lengthBytes[3])<<24
-		valueBytes := b[bytesRead : bytesRead+4+length]
-		expectedValue := expected[key]
-		if !slices.Equal(valueBytes, expectedValue) {
-			t.Errorf("list books request key-value pair encoding: key %d, expected %v, got %v", key, expectedValue, valueBytes)
-		}
-		bytesRead += 4 + length
-	}
+	assertMapEqual(t, expected, b, "list books")
 
 	buf.Reset()
 	listBooksRequest.NextPage = "12345678"
 	nextPageFilter := []byte{0x08, 0x00, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
 	nextPageFilterLength := uint8(len(nextPageFilter)) + 2 /*key*/
+	expectedHeader := expected[-1]
 	expectedHeader[6] += nextPageFilterLength
 	expectedHeader[len(expectedHeader)-4] += nextPageFilterLength
 	expectedHeader[len(expectedHeader)-2] += 1
@@ -125,27 +112,8 @@ func TestBookListRequestEncoding(t *testing.T) {
 		t.Fatalf("encoding error: %v", err)
 	}
 	b = buf.Bytes()
-	bytesRead = len(expectedHeader)
-	header = b[:bytesRead]
-	if !slices.Equal(header, expectedHeader) {
-		t.Errorf("list books request encoding: expected %v, got %v", expectedHeader, header)
-	}
-	for bytesRead < buf.Len() {
-		keyBytes := b[bytesRead : bytesRead+2]
-		key := int(keyBytes[0]) + int(keyBytes[1])<<8
-		bytesRead += 2
-		lengthBytes := b[bytesRead : bytesRead+4]
-		length := int(lengthBytes[0]) + int(lengthBytes[1])<<8 + int(lengthBytes[2])<<16 + int(lengthBytes[3])<<24
-		valueBytes := b[bytesRead : bytesRead+4+length]
-		expectedValue := expected[key]
-		if !slices.Equal(valueBytes, expectedValue) {
-			t.Errorf("list books request key-value pair encoding: key %d, expected %v, got %v", key, expectedValue, valueBytes)
-		}
-		bytesRead += 4 + length
-	}
+	assertMapEqual(t, expected, b, "list books")
 }
-
-// TODO refactor testing maps
 
 func TestBookDownloadDetailsRequestEncoding(t *testing.T) {
 	sessionId := "1234567890abcdefghijklmnopqrstuv"
