@@ -57,7 +57,7 @@ func TestGetSessionRequestEncoding(t *testing.T) {
 	b := buf.Bytes()
 	expectedHeader := expected[-1]
 	bytesRead := len(expectedHeader)
-	header := b[:len(expectedHeader)]
+	header := b[:bytesRead]
 	if !slices.Equal(header, expectedHeader) {
 		t.Errorf("session request header encoding: expected %v, got %v", expectedHeader, header)
 	}
@@ -78,12 +78,12 @@ func TestGetSessionRequestEncoding(t *testing.T) {
 
 func TestBookListRequestEncoding(t *testing.T) {
 	sessionId := "1234567890abcdefghijklmnopqrstuv"
-	expected := []byte{
-		0x11, 0x00, 0x00, 0x00, 0x1a, 0x00, 0x39, 0x00, 0x00, 0x00, 0x02, '1', '2', '3', '4', '5',
-		'6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
-		'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 0x02, 0x0e, 0x00, 0x02, 0x00,
-		0x08, 0x00, 0x04, 0x58, 0x02, 0x0c, 0x00, 0x01, 0x00, 0x03, 0x00, 0x04, 0x00, 0x00, 0x00, 0xf4,
-		0x01, 0x00, 0x00,
+	expected := map[int][]byte{
+		-1: {0x11, 0x00, 0x00, 0x00, 0x1a, 0x00, 0x39, 0x00, 0x00, 0x00, 0x02, '1', '2', '3', '4', '5',
+			'6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
+			'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 0x02, 0x0e, 0x00, 0x02, 0x00,
+			0x08, 0x00, 0x04, 0x58, 0x02, 0x0c, 0x00, 0x01, 0x00},
+		3: {0x04, 0x00, 0x00, 0x00, 0xf4, 0x01, 0x00, 0x00},
 	}
 	buf := new(bytes.Buffer)
 	listBooksRequest := request.NewBookListRequest(sessionId)
@@ -92,26 +92,60 @@ func TestBookListRequestEncoding(t *testing.T) {
 		t.Fatalf("encoding error: %v", err)
 	}
 	b := buf.Bytes()
-	if !slices.Equal(b, expected) {
-		t.Errorf("list books request encoding: expected %v, got %v", expected, b)
+	expectedHeader := expected[-1]
+	bytesRead := len(expectedHeader)
+	header := b[:bytesRead]
+	if !slices.Equal(header, expectedHeader) {
+		t.Errorf("list books request encoding: expected %v, got %v", expectedHeader, header)
 	}
-	listBooksRequest.NextPage = "12345678"
-	nextPageFilter := []byte{0x04, 0x00, 0x08, 0x00, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
-	nextPageFilterLength := uint8(len(nextPageFilter))
-	expected[6] += nextPageFilterLength
-	expected[len(expected)-14] += nextPageFilterLength
-	expected[len(expected)-12] += 1
-	expected = append(expected, nextPageFilter...)
+	for bytesRead < buf.Len() {
+		keyBytes := b[bytesRead : bytesRead+2]
+		key := int(keyBytes[0]) + int(keyBytes[1])<<8
+		bytesRead += 2
+		lengthBytes := b[bytesRead : bytesRead+4]
+		length := int(lengthBytes[0]) + int(lengthBytes[1])<<8 + int(lengthBytes[2])<<16 + int(lengthBytes[3])<<24
+		valueBytes := b[bytesRead : bytesRead+4+length]
+		expectedValue := expected[key]
+		if !slices.Equal(valueBytes, expectedValue) {
+			t.Errorf("list books request key-value pair encoding: key %d, expected %v, got %v", key, expectedValue, valueBytes)
+		}
+		bytesRead += 4 + length
+	}
+
 	buf.Reset()
+	listBooksRequest.NextPage = "12345678"
+	nextPageFilter := []byte{0x08, 0x00, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
+	nextPageFilterLength := uint8(len(nextPageFilter)) + 2 /*key*/
+	expectedHeader[6] += nextPageFilterLength
+	expectedHeader[len(expectedHeader)-4] += nextPageFilterLength
+	expectedHeader[len(expectedHeader)-2] += 1
+	expected[4] = nextPageFilter
 	err = packet.Encode(buf, listBooksRequest)
 	if err != nil {
 		t.Fatalf("encoding error: %v", err)
 	}
 	b = buf.Bytes()
-	if !slices.Equal(b, expected) {
-		t.Errorf("list books request encoding: expected %v, got %v", expected, b)
+	bytesRead = len(expectedHeader)
+	header = b[:bytesRead]
+	if !slices.Equal(header, expectedHeader) {
+		t.Errorf("list books request encoding: expected %v, got %v", expectedHeader, header)
+	}
+	for bytesRead < buf.Len() {
+		keyBytes := b[bytesRead : bytesRead+2]
+		key := int(keyBytes[0]) + int(keyBytes[1])<<8
+		bytesRead += 2
+		lengthBytes := b[bytesRead : bytesRead+4]
+		length := int(lengthBytes[0]) + int(lengthBytes[1])<<8 + int(lengthBytes[2])<<16 + int(lengthBytes[3])<<24
+		valueBytes := b[bytesRead : bytesRead+4+length]
+		expectedValue := expected[key]
+		if !slices.Equal(valueBytes, expectedValue) {
+			t.Errorf("list books request key-value pair encoding: key %d, expected %v, got %v", key, expectedValue, valueBytes)
+		}
+		bytesRead += 4 + length
 	}
 }
+
+// TODO refactor testing maps
 
 func TestBookDownloadDetailsRequestEncoding(t *testing.T) {
 	sessionId := "1234567890abcdefghijklmnopqrstuv"
