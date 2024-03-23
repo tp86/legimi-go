@@ -43,7 +43,7 @@ func (bm *BookMetadata) Decode(r io.Reader) (int, error) {
 	if err != nil {
 		return bytesRead, err
 	}
-	n, err := protocol.Decode(r, protocol.WithLength{Value: metadata{
+	n, err := protocol.Decode(r, protocol.WithLength{Value: booklistMetadata{
 		10: &bm.Id,
 		11: &bm.Title,
 		0:  &bm.Author,
@@ -55,22 +55,20 @@ func (bm *BookMetadata) Decode(r io.Reader) (int, error) {
 	return bytesRead, err
 }
 
-type metadata protocol.Map
+type booklistMetadata protocol.Map
 
-var (
-	emptyLength = protocol.WithLength{}.EncodedLength()
-	toSkip      = []int{
-		protocol.U64Length,
-		emptyLength,
-		protocol.U32Length,
-		protocol.U64Length,
-		emptyLength,
-	}
-)
+var emptyLength = protocol.WithLength{}.EncodedLength()
+var toSkipInBooklistMetadata = []int{
+	protocol.U64Length,
+	emptyLength,
+	protocol.U32Length,
+	protocol.U64Length,
+	emptyLength,
+}
 
-func (md metadata) Decode(r io.Reader) (int, error) {
+func (md booklistMetadata) Decode(r io.Reader) (int, error) {
 	var bytesRead int
-	for _, skip := range toSkip {
+	for _, skip := range toSkipInBooklistMetadata {
 		n, err := protocol.SkipDecode(r, skip)
 		bytesRead += n
 		if err != nil {
