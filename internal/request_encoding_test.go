@@ -20,20 +20,114 @@ func TestRegisterRequestEncoding(t *testing.T) {
 		'|', 'K', 'i', 'n', 'd', 'l', 'e', '|', '|', '1', '2', '3', '4', '5', '6', '7',
 		'8', '|', '|', 'K', 'i', 'n', 'd', 'l', 'e', 0x00, 0x00,
 	}
+
+	req := request.NewRegisterRequest(input.login, input.password, input.serial)
+	encodeAndCheck(t, "register", req, expected)
+}
+
+func TestGetSessionRequestEncoding(t *testing.T) {
+	input := struct {
+		login, password string
+		kindleId        uint64
+	}{"login", "password", 12345678}
+	expected := map[int][]byte{
+		encodedMapHeaderKey: {0x11, 0x00, 0x00, 0x00, 0x50, 0x00, 0x54, 0x00, 0x00, 0x00, 0x06, 0x00},
+		0:                   {0x05, 0x00, 0x00, 0x00, 'l', 'o', 'g', 'i', 'n'},
+		1:                   {0x08, 0x00, 0x00, 0x00, 'p', 'a', 's', 's', 'w', 'o', 'r', 'd'},
+		2:                   {0x08, 0x00, 0x00, 0x00, 0x4e, 0x61, 0xbc, 0x00, 0x00, 0x00, 0x00, 0x00},
+		3:                   {0x0d, 0x00, 0x00, 0x00, 0x31, 0x2e, 0x38, 0x2e, 0x35, 0x20, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x73},
+		4:                   {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+		5:                   {0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+	}
+
+	req := request.NewGetSessionRequest(input.login, input.password, input.kindleId)
+	encodeAndCheckMap(t, "session", req, expected)
+}
+
+func TestBookListRequestEncoding(t *testing.T) {
+	input := struct {
+		sessionId string
+		nextPage  string
+	}{sessionId: "1234567890abcdefghijklmnopqrstuv"}
+	expected := map[int][]byte{
+		encodedMapHeaderKey: {0x11, 0x00, 0x00, 0x00, 0x1a, 0x00, 0x39, 0x00, 0x00, 0x00, 0x02, '1', '2', '3', '4', '5',
+			'6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
+			'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 0x02, 0x0e, 0x00, 0x02, 0x00,
+			0x08, 0x00, 0x04, 0x58, 0x02, 0x0c, 0x00, 0x01, 0x00},
+		3: {0x04, 0x00, 0x00, 0x00, 0xf4, 0x01, 0x00, 0x00},
+	}
+
+	req := request.NewBookListRequest(input.sessionId)
+	encodeAndCheckMap(t, "list books", req, expected)
+
+	addNewFilter := func(expected map[int][]byte, key int, filter []byte) {
+		nextPageFilterLength := 2 /*key*/ + uint8(len(filter)) /*value*/
+		expectedHeader := expected[encodedMapHeaderKey]
+		// update length of payload
+		expectedHeader[6] += nextPageFilterLength
+		// update length of filters
+		expectedHeader[len(expectedHeader)-4] += nextPageFilterLength
+		// update count of map entries
+		expectedHeader[len(expectedHeader)-2] += 1
+		// add map entry
+		expected[key] = filter
+	}
+	nextPageFilter := []byte{0x08, 0x00, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
+	addNewFilter(expected, 4, nextPageFilter)
+
+	req.NextPage = "12345678"
+	encodeAndCheckMap(t, "list books", req, expected)
+}
+
+func TestBookDownloadDetailsRequestEncoding(t *testing.T) {
+	input := struct {
+		sessionId   string
+		bookId      uint64
+		bookVersion uint64
+	}{
+		sessionId:   "1234567890abcdefghijklmnopqrstuv",
+		bookId:      12345678,
+		bookVersion: 4,
+	}
+	expected := []byte{
+		0x11, 0x00, 0x00, 0x00, 0xc8, 0x00, 0x40, 0x00, 0x00, 0x00, 0x4e, 0x61, 0xbc, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, '1', '2', '3', '4', '5', '6',
+		'7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+		'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+
+	req := request.NewBookDownloadDetailsRequest(input.sessionId, input.bookId, input.bookVersion)
+	encodeAndCheck(t, "book download details", req, expected)
+}
+
+func encodeAndCheck(t *testing.T, name string, req request.Request, expected []byte) {
 	buf := new(bytes.Buffer)
-	regReq := request.NewRegisterRequest(input.login, input.password, input.serial)
-	err := packet.Encode(buf, regReq)
+	err := packet.Encode(buf, req)
 	if err != nil {
 		t.Fatalf("encoding error: %v", err)
 	}
 	b := buf.Bytes()
 	if !slices.Equal(b, expected) {
-		t.Errorf("register request encoding: expected %v, got %v", expected, b)
+		t.Errorf("%s request encoding: expected %v, got %v", name, expected, b)
 	}
 }
 
-func assertMapEqual(t *testing.T, expected map[int][]byte, actual []byte, name string) {
-	expectedHeader := expected[-1]
+func encodeAndCheckMap(t *testing.T, name string, req request.Request, expected map[int][]byte) {
+	buf := new(bytes.Buffer)
+	err := packet.Encode(buf, req)
+	if err != nil {
+		t.Fatalf("encoding error: %v", err)
+	}
+	checkMapEqual(t, name, expected, buf.Bytes())
+}
+
+const (
+	encodedMapHeaderKey = -1
+)
+
+func checkMapEqual(t *testing.T, name string, expected map[int][]byte, actual []byte) {
+	expectedHeader := expected[encodedMapHeaderKey]
 	bytesRead := len(expectedHeader)
 	header := actual[:bytesRead]
 	if !slices.Equal(header, expectedHeader) {
@@ -51,89 +145,5 @@ func assertMapEqual(t *testing.T, expected map[int][]byte, actual []byte, name s
 			t.Errorf("%s request key-value pair encoding: key %d, expected %v, got %v", name, key, expectedValue, valueBytes)
 		}
 		bytesRead += 4 + length
-	}
-}
-
-func TestGetSessionRequestEncoding(t *testing.T) {
-	input := struct {
-		login, password string
-		kindleId        uint64
-	}{
-		"login", "password", 12345678,
-	}
-	expected := map[int][]byte{
-		-1: {0x11, 0x00, 0x00, 0x00, 0x50, 0x00, 0x54, 0x00, 0x00, 0x00, 0x06, 0x00},
-		0:  {0x05, 0x00, 0x00, 0x00, 'l', 'o', 'g', 'i', 'n'},
-		1:  {0x08, 0x00, 0x00, 0x00, 'p', 'a', 's', 's', 'w', 'o', 'r', 'd'},
-		2:  {0x08, 0x00, 0x00, 0x00, 0x4e, 0x61, 0xbc, 0x00, 0x00, 0x00, 0x00, 0x00},
-		3:  {0x0d, 0x00, 0x00, 0x00, 0x31, 0x2e, 0x38, 0x2e, 0x35, 0x20, 0x57, 0x69, 0x6e, 0x64, 0x6f, 0x77, 0x73},
-		4:  {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-		5:  {0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-	}
-	buf := new(bytes.Buffer)
-	sessionRequest := request.NewGetSessionRequest(input.login, input.password, input.kindleId)
-	err := packet.Encode(buf, sessionRequest)
-	if err != nil {
-		t.Fatalf("encoding error: %v", err)
-	}
-	b := buf.Bytes()
-	assertMapEqual(t, expected, b, "session")
-}
-
-func TestBookListRequestEncoding(t *testing.T) {
-	sessionId := "1234567890abcdefghijklmnopqrstuv"
-	expected := map[int][]byte{
-		-1: {0x11, 0x00, 0x00, 0x00, 0x1a, 0x00, 0x39, 0x00, 0x00, 0x00, 0x02, '1', '2', '3', '4', '5',
-			'6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
-			'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 0x02, 0x0e, 0x00, 0x02, 0x00,
-			0x08, 0x00, 0x04, 0x58, 0x02, 0x0c, 0x00, 0x01, 0x00},
-		3: {0x04, 0x00, 0x00, 0x00, 0xf4, 0x01, 0x00, 0x00},
-	}
-	buf := new(bytes.Buffer)
-	listBooksRequest := request.NewBookListRequest(sessionId)
-	err := packet.Encode(buf, listBooksRequest)
-	if err != nil {
-		t.Fatalf("encoding error: %v", err)
-	}
-	b := buf.Bytes()
-	assertMapEqual(t, expected, b, "list books")
-
-	buf.Reset()
-	listBooksRequest.NextPage = "12345678"
-	nextPageFilter := []byte{0x08, 0x00, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38}
-	nextPageFilterLength := uint8(len(nextPageFilter)) + 2 /*key*/
-	expectedHeader := expected[-1]
-	expectedHeader[6] += nextPageFilterLength
-	expectedHeader[len(expectedHeader)-4] += nextPageFilterLength
-	expectedHeader[len(expectedHeader)-2] += 1
-	expected[4] = nextPageFilter
-	err = packet.Encode(buf, listBooksRequest)
-	if err != nil {
-		t.Fatalf("encoding error: %v", err)
-	}
-	b = buf.Bytes()
-	assertMapEqual(t, expected, b, "list books")
-}
-
-func TestBookDownloadDetailsRequestEncoding(t *testing.T) {
-	sessionId := "1234567890abcdefghijklmnopqrstuv"
-	bookId := uint64(12345678)
-	bookVersion := uint64(4)
-	expected := []byte{
-		0x11, 0x00, 0x00, 0x00, 0xc8, 0x00, 0x40, 0x00, 0x00, 0x00, 0x4e, 0x61, 0xbc, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, '1', '2', '3', '4', '5', '6',
-		'7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
-		'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
-		0xff, 0xff, 0xff, 0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-	}
-	buf := new(bytes.Buffer)
-	bookDownloadDetailsRequest := request.NewBookDownloadDetailsRequest(sessionId, bookId, bookVersion)
-	err := packet.Encode(buf, bookDownloadDetailsRequest)
-	if err != nil {
-		t.Fatalf("encoding error: %v", err)
-	}
-	b := buf.Bytes()
-	if !slices.Equal(b, expected) {
-		t.Errorf("book download details request encoding: expected %v, got %v", expected, b)
 	}
 }
