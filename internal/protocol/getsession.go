@@ -46,10 +46,7 @@ type Session struct {
 }
 
 func (s *Session) Decode(r io.Reader) (int, error) {
-	dict := encoding.Map{
-		7: &s.Id,
-	}
-	return encoding.Decode(r, dict)
+	return encoding.Decode(r, encoding.Map{7: &s.Id})
 }
 
 func (s Session) Type() uint16 {

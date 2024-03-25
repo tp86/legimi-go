@@ -12,3 +12,5 @@ type Key = uint16
 type Typed interface {
 	Type() uint16
 }
+
+var EmptyLength = WithLength{}.EncodedLength()

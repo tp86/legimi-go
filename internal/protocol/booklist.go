@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/tp86/legimi-go/internal/protocol/encoding"
@@ -120,13 +121,11 @@ func (bl *BookList) Decode(r io.Reader) (int, error) {
 }
 
 func (bm *BookMetadata) Decode(r io.Reader) (int, error) {
-	var bytesRead int
-	// skip type of item, only 7 supported
-	// TODO check type of item
-	bytesRead, err := encoding.SkipDecode(r, encoding.U8Length)
+	bytesRead, err := checkBookListMetadataIsSupported(r)
 	if err != nil {
 		return bytesRead, err
 	}
+
 	n, err := encoding.Decode(r, encoding.WithLength{Value: booklistMetadata{
 		10: &bm.Id,
 		11: &bm.Title,
@@ -139,27 +138,38 @@ func (bm *BookMetadata) Decode(r io.Reader) (int, error) {
 	return bytesRead, err
 }
 
+func checkBookListMetadataIsSupported(r io.Reader) (int, error) {
+	var metadataType uint8
+	bytesRead, err := encoding.Decode(r, &metadataType)
+	if err != nil {
+		return bytesRead, err
+	}
+	if metadataType != booklistMetadataSupportedType {
+		return bytesRead, fmt.Errorf("book metadata type should be %d, found %d", booklistMetadataSupportedType, metadataType)
+	}
+	return bytesRead, nil
+}
+
+const (
+	booklistMetadataSupportedType = 7
+)
+
 type booklistMetadata encoding.Map
 
 var toSkipInBooklistMetadata = []int{
 	encoding.U64Length,
-	emptyLength,
+	encoding.EmptyLength,
 	encoding.U32Length,
 	encoding.U64Length,
-	emptyLength,
+	encoding.EmptyLength,
 }
 
 func (md booklistMetadata) Decode(r io.Reader) (int, error) {
-	var bytesRead int
-	for _, skip := range toSkipInBooklistMetadata {
-		n, err := encoding.SkipDecode(r, skip)
-		bytesRead += n
-		if err != nil {
-			return bytesRead, err
-		}
+	bytesRead, err := encoding.SkipDecodeMany(r, toSkipInBooklistMetadata)
+	if err != nil {
+		return bytesRead, err
 	}
-	m := encoding.Map(md)
-	n, err := encoding.Decode(r, m)
+	n, err := encoding.Decode(r, encoding.Map(md))
 	bytesRead += n
 	return bytesRead, err
 }

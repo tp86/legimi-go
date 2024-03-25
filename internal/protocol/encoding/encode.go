@@ -20,6 +20,7 @@ func Encode(w io.Writer, value any) error {
 	case bool:
 		var byteValue uint8
 		if value {
+			// ensure same true representation
 			byteValue = 0xff
 		}
 		return encode(w, byteValue)

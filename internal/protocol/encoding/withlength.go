@@ -32,11 +32,13 @@ func (wl WithLength) Decode(r io.Reader) (int, error) {
 func decodeWithLength(r io.Reader, value any, length int) (int, error) {
 	switch value := value.(type) {
 	case *string:
+		// special case for strings - we need length value to read correct number of bytes
 		bytes := make([]byte, length)
 		bytesRead, err := r.Read(bytes)
 		if err != nil {
 			return bytesRead, err
 		}
+		// just cast to string, no decoding needed
 		*value = string(bytes)
 		return bytesRead, nil
 	default:

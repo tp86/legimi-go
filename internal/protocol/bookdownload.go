@@ -63,40 +63,23 @@ type BookDownloadDetails struct {
 	Size uint64
 }
 
-// TODO refactor
-
 const (
-	detailsCountSupported = 1
-	typeSupported         = 4
+	bookDownloadDetailsSupportedCount = 1
+	bookDownloadDetailsSupportedType  = 4
 )
 
 func (bdd *BookDownloadDetails) Decode(r io.Reader) (int, error) {
-	var bytesRead int
-	for _, skip := range toSkipInBookDownloadDetailsHeader {
-		n, err := encoding.SkipDecode(r, skip)
-		bytesRead += n
-		if err != nil {
-			return bytesRead, err
-		}
-	}
-	var count uint32
-	n, err := encoding.Decode(r, &count)
-	bytesRead += n
+	bytesRead, err := encoding.SkipDecodeMany(r, toSkipInBookDownloadDetailsHeader)
 	if err != nil {
 		return bytesRead, err
 	}
-	if count != detailsCountSupported {
-		return bytesRead, fmt.Errorf("there should be only %d download details in response, received %d", detailsCountSupported, count)
-	}
-	var typ uint8
-	n, err = encoding.Decode(r, &typ)
+
+	n, err := checkBookDownloadDetailsIsSupported(r)
 	bytesRead += n
 	if err != nil {
-		return bytesRead, err
+		return bytesRead, fmt.Errorf("book download details response not supported: %v", err)
 	}
-	if typ != typeSupported {
-		return bytesRead, fmt.Errorf("download details type should be %d, found %d", typeSupported, typ)
-	}
+
 	n, err = encoding.Decode(r, encoding.Map{
 		0: &bdd.Url,
 		2: &bdd.Size,
@@ -105,13 +88,9 @@ func (bdd *BookDownloadDetails) Decode(r io.Reader) (int, error) {
 	if err != nil {
 		return bytesRead, err
 	}
-	for _, skip := range toSkipInBookDownloadDetailsFooter {
-		n, err := encoding.SkipDecode(r, skip)
-		bytesRead += n
-		if err != nil {
-			return bytesRead, err
-		}
-	}
+
+	n, err = encoding.SkipDecodeMany(r, toSkipInBookDownloadDetailsFooter)
+	bytesRead += n
 	return bytesRead, err
 }
 
@@ -119,10 +98,34 @@ func (bdd BookDownloadDetails) Type() uint16 {
 	return 0x0018
 }
 
+func checkBookDownloadDetailsIsSupported(r io.Reader) (int, error) {
+	var bytesRead int
+	var count uint32
+	n, err := encoding.Decode(r, &count)
+	bytesRead += n
+	if err != nil {
+		return bytesRead, err
+	}
+	if count != bookDownloadDetailsSupportedCount {
+		return bytesRead, fmt.Errorf("there should be only %d download details in response, received %d", bookDownloadDetailsSupportedCount, count)
+	}
+
+	var detailsType uint8
+	n, err = encoding.Decode(r, &detailsType)
+	bytesRead += n
+	if err != nil {
+		return bytesRead, err
+	}
+	if detailsType != bookDownloadDetailsSupportedType {
+		return bytesRead, fmt.Errorf("download details type should be %d, found %d", bookDownloadDetailsSupportedType, detailsType)
+	}
+	return bytesRead, nil
+}
+
 var (
 	toSkipInBookDownloadDetailsHeader = []int{encoding.U8Length, encoding.U32Length}
 	toSkipInBookDownloadDetailsFooter = []int{
-		emptyLength,
+		encoding.EmptyLength,
 		encoding.U64Length,
 		encoding.U32Length,
 	}

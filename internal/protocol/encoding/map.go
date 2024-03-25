@@ -10,7 +10,7 @@ func (m Map) Encode(w io.Writer) error {
 		return err
 	}
 	for key, value := range m {
-		err = encode(w, key)
+		err = Encode(w, key)
 		if err != nil {
 			return err
 		}
@@ -22,8 +22,8 @@ func (m Map) Encode(w io.Writer) error {
 	return nil
 }
 
-func (m Map) EncodedLength() int {
-	totalLength := U16Length
+func (m Map) EncodedLength() (totalLength int) {
+	totalLength += U16Length /*count*/
 	for _, value := range m {
 		totalLength += U16Length /*key*/ + U32Length /*length*/ + EncodedLength(value)
 	}

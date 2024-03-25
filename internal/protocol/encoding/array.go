@@ -34,8 +34,8 @@ func (a *Array[T]) Decode(r io.Reader) (int, error) {
 		return bytesRead, err
 	}
 	array := *a
-	// ensure array has at least count capacity
-	array = extend(array, count)
+	// ensure array has at least count length
+	array = ensureLength(array, count)
 	for i := uint16(0); i < count; i++ {
 		var value T
 		n, err := Decode(r, &value)
@@ -49,7 +49,7 @@ func (a *Array[T]) Decode(r io.Reader) (int, error) {
 	return bytesRead, err
 }
 
-func extend[T any](a []T, count uint16) []T {
+func ensureLength[T any](a []T, count uint16) []T {
 	diff := int(count) - cap(a)
 	if diff > 0 {
 		a = append(make([]T, count), a...)

@@ -20,12 +20,12 @@ func NewRegisterRequest(login, password, kindleSerialNo string) RegisterRequest 
 }
 
 func (r RegisterRequest) Encode(w io.Writer) error {
-	err := encoding.Encode(w, emptyId)
+	err := encoding.Encode(w, emptyKindleId)
 	if err != nil {
 		return err
 	}
 	for _, value := range r.data() {
-		err := encoding.Encode(w, uint16(stringLength(value)))
+		err := encoding.Encode(w, uint16(encoding.EncodedLength(value)))
 		if err != nil {
 			return err
 		}
@@ -43,9 +43,9 @@ func (r RegisterRequest) Encode(w io.Writer) error {
 
 func (r RegisterRequest) EncodedLength() int {
 	var totalLength int
-	totalLength += encoding.EncodedLength(emptyId)
+	totalLength += encoding.EncodedLength(emptyKindleId)
 	for _, s := range r.data() {
-		totalLength += encoding.U16Length + stringLength(s)
+		totalLength += encoding.U16Length + encoding.EncodedLength(s)
 	}
 	totalLength += encoding.EncodedLength(emptyLocale)
 	return totalLength
@@ -55,13 +55,9 @@ func (r RegisterRequest) Type() uint16 {
 	return 0x0042
 }
 
-func stringLength(s string) int {
-	return encoding.EncodedLength(s)
-}
-
 var (
-	emptyId     uint64 = 0
-	emptyLocale        = encoding.Array[uint8]{}
+	emptyKindleId uint64 = 0
+	emptyLocale          = encoding.Array[uint8]{}
 )
 
 func (r RegisterRequest) data() []string {
@@ -73,10 +69,7 @@ type Register struct {
 }
 
 func (reg *Register) Decode(r io.Reader) (int, error) {
-	dict := encoding.Map{
-		6: &reg.KindleId,
-	}
-	return encoding.Decode(r, dict)
+	return encoding.Decode(r, encoding.Map{6: &reg.KindleId})
 }
 
 func (r Register) Type() uint16 {
