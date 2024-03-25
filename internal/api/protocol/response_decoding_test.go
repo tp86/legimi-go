@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/tp86/legimi-go/internal/protocol"
+	"github.com/tp86/legimi-go/internal/api/protocol"
 )
 
 func TestRegisterResponseDecoding(t *testing.T) {

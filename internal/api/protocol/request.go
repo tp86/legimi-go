@@ -1,6 +1,6 @@
 package protocol
 
-import "github.com/tp86/legimi-go/internal/protocol/encoding"
+import "github.com/tp86/legimi-go/internal/api/protocol/encoding"
 
 type Request interface {
 	encoding.Encoder

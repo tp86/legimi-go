@@ -3,7 +3,7 @@ package protocol
 import (
 	"io"
 
-	"github.com/tp86/legimi-go/internal/protocol/encoding"
+	"github.com/tp86/legimi-go/internal/api/protocol/encoding"
 )
 
 type GetSession struct {

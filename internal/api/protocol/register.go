@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/tp86/legimi-go/internal/protocol/encoding"
+	"github.com/tp86/legimi-go/internal/api/protocol/encoding"
 )
 
 type RegisterRequest struct {

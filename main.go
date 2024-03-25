@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	sessionId, err := service.NewSessionService().GetSession()
+	sessionId, err := service.NewDefaultSessionService().GetSession()
 	if err != nil {
 		fmt.Println(err)
 		return
