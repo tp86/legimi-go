@@ -15,14 +15,14 @@ func TestRegisterResponseDecoding(t *testing.T) {
 		0x00, 0x00, 0x4e, 0x61, 0xbc, 0x00, 0x00, 0x00, 0x00, 0x00,
 	}
 	expected := response.Register{KindleId: 12345678}
-	buf := bytes.NewBuffer(input)
-	var registerResponse response.Register
-	err := packet.Decode(buf, &registerResponse)
+	var resp response.Register
+
+	err := packet.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {
 		t.Fatalf("decoding error: %v", err)
 	}
-	if registerResponse != expected {
-		t.Errorf("register response decoding: expected %v, got %v", expected, registerResponse)
+	if resp != expected {
+		t.Errorf("register response decoding: expected %v, got %v", expected, resp)
 	}
 }
 
@@ -34,14 +34,14 @@ func TestSessionResponseDecoding(t *testing.T) {
 		'u', 'v',
 	}
 	expected := response.Session{Id: "1234567890abcdefghijklmnopqrstuv"}
-	buf := bytes.NewBuffer(input)
-	var sessionResponse response.Session
-	err := packet.Decode(buf, &sessionResponse)
+	var resp response.Session
+
+	err := packet.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {
 		t.Fatalf("decoding error: %v", err)
 	}
-	if sessionResponse != expected {
-		t.Errorf("session response decoding: expected %v, got %v", expected, sessionResponse)
+	if resp != expected {
+		t.Errorf("session response decoding: expected %v, got %v", expected, resp)
 	}
 }
 
@@ -59,14 +59,14 @@ func TestBookListResponseDecoding(t *testing.T) {
 	expected := response.BookList{
 		{Id: 12345678, Title: "Book title", Author: "Author", Version: 2, Downloaded: true, NextPage: "12345678"},
 	}
-	buf := bytes.NewBuffer(input)
-	var bookListResponse response.BookList
-	err := packet.Decode(buf, &bookListResponse)
+	var resp response.BookList
+
+	err := packet.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {
 		t.Fatalf("decoding error: %v", err)
 	}
-	if !slices.Equal(bookListResponse, expected) {
-		t.Errorf("book list response decoding: expected %v, got %v", expected, bookListResponse)
+	if !slices.Equal(resp, expected) {
+		t.Errorf("book list response decoding: expected %v, got %v", expected, resp)
 	}
 }
 
@@ -75,14 +75,14 @@ func TestEmptyBookListDecoding(t *testing.T) {
 		0x11, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
 	}
 	expected := response.BookList{}
-	buf := bytes.NewBuffer(input)
-	var bookListResponse response.BookList
-	err := packet.Decode(buf, &bookListResponse)
+	var resp response.BookList
+
+	err := packet.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {
 		t.Fatalf("decoding error: %v", err)
 	}
-	if !slices.Equal(bookListResponse, expected) {
-		t.Errorf("empty book list response decoding: expected %v, got %v", expected, bookListResponse)
+	if !slices.Equal(resp, expected) {
+		t.Errorf("empty book list response decoding: expected %v, got %v", expected, resp)
 	}
 }
 
@@ -98,13 +98,13 @@ func TestBookDownloadDetailsDecoding(t *testing.T) {
 		Url:  "https://file.mobi",
 		Size: 12345678,
 	}
-	buf := bytes.NewBuffer(input)
-	var bookDownloadDetails response.BookDownloadDetails
-	err := packet.Decode(buf, &bookDownloadDetails)
+	var resp response.BookDownloadDetails
+
+	err := packet.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {
 		t.Fatalf("decoding error: %v", err)
 	}
-	if bookDownloadDetails != expected {
-		t.Errorf("book list response decoding: expected %v, got %v", expected, bookDownloadDetails)
+	if resp != expected {
+		t.Errorf("book list response decoding: expected %v, got %v", expected, resp)
 	}
 }
