@@ -1,9 +1,9 @@
-package request
+package protocol
 
 import (
 	"io"
 
-	"github.com/tp86/legimi-go/internal/protocol"
+	"github.com/tp86/legimi-go/internal/protocol/encoding"
 )
 
 type GetSession struct {
@@ -19,24 +19,39 @@ func NewGetSessionRequest(login, password string, kindleId uint64) GetSession {
 }
 
 func (s GetSession) Encode(w io.Writer) error {
-	return protocol.Encode(w, s.asMap())
+	return encoding.Encode(w, s.asMap())
 }
 
 func (s GetSession) EncodedLength() int {
-	return protocol.EncodedLength(s.asMap())
+	return encoding.EncodedLength(s.asMap())
 }
 
 func (s GetSession) Type() uint16 {
 	return 0x0050
 }
 
-func (s GetSession) asMap() protocol.Map {
-	return protocol.Map{
+func (s GetSession) asMap() encoding.Map {
+	return encoding.Map{
 		0: s.login,
 		1: s.password,
 		2: s.kindleId,
-		3: protocol.AppVersion,
+		3: AppVersion,
 		4: uint32(0),
 		5: uint64(0),
 	}
+}
+
+type Session struct {
+	Id string
+}
+
+func (s *Session) Decode(r io.Reader) (int, error) {
+	dict := encoding.Map{
+		7: &s.Id,
+	}
+	return encoding.Decode(r, dict)
+}
+
+func (s Session) Type() uint16 {
+	return 0x4002
 }

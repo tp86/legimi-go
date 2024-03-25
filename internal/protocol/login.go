@@ -1,4 +1,4 @@
-package request
+package protocol
 
 type loginData struct {
 	login    string

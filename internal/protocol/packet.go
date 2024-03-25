@@ -1,21 +1,19 @@
-package packet
+package protocol
 
 import (
 	"fmt"
 	"io"
 
-	"github.com/tp86/legimi-go/internal/protocol"
-	"github.com/tp86/legimi-go/internal/request"
-	"github.com/tp86/legimi-go/internal/response"
+	"github.com/tp86/legimi-go/internal/protocol/encoding"
 )
 
-func Encode(w io.Writer, req request.Request) error {
+func Encode(w io.Writer, req Request) error {
 	for _, value := range []any{
-		protocol.Version,
+		Version,
 		req.Type(),
-		protocol.WithLength{Value: req},
+		encoding.WithLength{Value: req},
 	} {
-		err := protocol.Encode(w, value)
+		err := encoding.Encode(w, value)
 		if err != nil {
 			return err
 		}
@@ -23,22 +21,22 @@ func Encode(w io.Writer, req request.Request) error {
 	return nil
 }
 
-func Decode(r io.Reader, resp response.Response) error {
+func Decode(r io.Reader, resp Response) error {
 	// TODO handle errors
-	protocol.SkipDecode(r, protocol.U32Length)
+	encoding.SkipDecode(r, encoding.U32Length)
 	// TODO check protocol version?
 	var responseType uint16
-	protocol.Decode(r, &responseType)
+	encoding.Decode(r, &responseType)
 	// TODO handle error response type
 	if responseType != resp.Type() {
 		return fmt.Errorf("unexpected response type: %d, expected: %d", responseType, resp.Type())
 	}
 	var packetLength uint32
-	protocol.Decode(r, &packetLength)
+	encoding.Decode(r, &packetLength)
 	if packetLength == 0 {
 		return fmt.Errorf("empty packet body")
 	}
-	bytesRead, err := protocol.Decode(r, resp)
+	bytesRead, err := encoding.Decode(r, resp)
 	if err != nil {
 		return fmt.Errorf("decoding error: %v", err)
 	}
