@@ -1,4 +1,6 @@
-package repository
+package account
+
+import "github.com/tp86/legimi-go/internal/repository"
 
 type MemoryAccountRepository struct {
 	Login, Password string
@@ -9,7 +11,7 @@ var (
 	mar *MemoryAccountRepository
 )
 
-func GetMemoryRepository() AccountRepository {
+func GetMemoryRepository() repository.Account {
 	if mar == nil {
 		mar = &MemoryAccountRepository{}
 	}

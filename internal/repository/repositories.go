@@ -1,6 +1,6 @@
 package repository
 
-type AccountRepository interface {
+type Account interface {
 	GetLogin() string
 	GetPassword() string
 	GetKindleId() uint64

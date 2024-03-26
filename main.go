@@ -6,8 +6,10 @@ import (
 	"github.com/tp86/legimi-go/internal/service"
 )
 
+var sessionService service.Session
+
 func main() {
-	sessionId, err := service.NewDefaultSessionService().GetSession()
+	sessionId, err := sessionService.GetSession()
 	if err != nil {
 		fmt.Println(err)
 		return
