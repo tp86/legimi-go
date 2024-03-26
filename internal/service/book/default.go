@@ -1,6 +1,7 @@
 package book
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/tp86/legimi-go/internal/api"
@@ -42,5 +43,14 @@ func (bs defaultBookService) ListBooks() error {
 }
 
 func (bs defaultBookService) DownloadBooks(bookIds []uint64) error {
+	// TODO parallel download
+	errs := make([]error, 0)
+	for _, id := range bookIds {
+		errs = append(errs, bs.downloadBook(id))
+	}
+	return errors.Join(errs...)
+}
+
+func (bs defaultBookService) downloadBook(id uint64) error {
 	return nil
 }
