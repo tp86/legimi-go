@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/tp86/legimi-go/internal/api/protocol"
+	"github.com/tp86/legimi-go/internal/model"
 )
 
 func TestRegisterResponseDecoding(t *testing.T) {
@@ -13,8 +14,8 @@ func TestRegisterResponseDecoding(t *testing.T) {
 		0x11, 0x00, 0x00, 0x00, 0x00, 0x40, 0x10, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00, 0x08, 0x00,
 		0x00, 0x00, 0x4e, 0x61, 0xbc, 0x00, 0x00, 0x00, 0x00, 0x00,
 	}
-	expected := protocol.Register{KindleId: 12345678}
-	var resp protocol.Register
+	expected := model.Register{KindleId: 12345678}
+	var resp model.Register
 
 	err := protocol.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {
@@ -32,8 +33,8 @@ func TestSessionResponseDecoding(t *testing.T) {
 		'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
 		'u', 'v',
 	}
-	expected := protocol.Session{Id: "1234567890abcdefghijklmnopqrstuv"}
-	var resp protocol.Session
+	expected := model.Session{Id: "1234567890abcdefghijklmnopqrstuv"}
+	var resp model.Session
 
 	err := protocol.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {
@@ -55,10 +56,10 @@ func TestBookListResponseDecoding(t *testing.T) {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1e, 0x00, 0x01, 0x00, 0x00, 0x00, 0xff, 0x22, 0x00,
 		0x08, 0x00, 0x00, 0x00, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
 	}
-	expected := protocol.BookList{
+	expected := model.BookList{
 		{Id: 12345678, Title: "Book title", Author: "Author", Version: 2, Downloaded: true, NextPage: "12345678"},
 	}
-	var resp protocol.BookList
+	var resp model.BookList
 
 	err := protocol.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {
@@ -73,8 +74,8 @@ func TestEmptyBookListDecoding(t *testing.T) {
 	input := []byte{
 		0x11, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
 	}
-	expected := protocol.BookList{}
-	var resp protocol.BookList
+	expected := model.BookList{}
+	var resp model.BookList
 
 	err := protocol.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {
@@ -93,11 +94,11 @@ func TestBookDownloadDetailsDecoding(t *testing.T) {
 		'/', '/', 'f', 'i', 'l', 'e', '.', 'm', 'o', 'b', 'i', 0x00, 0x00, 0x00, 0x00, 0xff,
 		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00,
 	}
-	expected := protocol.BookDownloadDetails{
+	expected := model.BookDownloadDetails{
 		Url:  "https://file.mobi",
 		Size: 12345678,
 	}
-	var resp protocol.BookDownloadDetails
+	var resp model.BookDownloadDetails
 
 	err := protocol.Decode(bytes.NewBuffer(input), &resp)
 	if err != nil {

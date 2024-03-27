@@ -1,8 +1,9 @@
-package protocol
+package model
 
 import (
 	"io"
 
+	"github.com/tp86/legimi-go/internal/api/protocol"
 	"github.com/tp86/legimi-go/internal/api/protocol/encoding"
 )
 
@@ -35,7 +36,7 @@ func (s GetSession) asMap() encoding.Map {
 		0: s.login,
 		1: s.password,
 		2: s.kindleId,
-		3: AppVersion,
+		3: protocol.AppVersion,
 		4: uint32(0),
 		5: uint64(0),
 	}

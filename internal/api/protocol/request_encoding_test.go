@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/tp86/legimi-go/internal/api/protocol"
+	"github.com/tp86/legimi-go/internal/model"
 )
 
 func TestRegisterRequestEncoding(t *testing.T) {
@@ -20,7 +21,7 @@ func TestRegisterRequestEncoding(t *testing.T) {
 		'8', '|', '|', 'K', 'i', 'n', 'd', 'l', 'e', 0x00, 0x00,
 	}
 
-	req := protocol.NewRegisterRequest(input.login, input.password, input.serial)
+	req := model.NewRegisterRequest(input.login, input.password, input.serial)
 	encodeAndCheck(t, "register", req, expected)
 }
 
@@ -39,7 +40,7 @@ func TestGetSessionRequestEncoding(t *testing.T) {
 		5:                   {0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 	}
 
-	req := protocol.NewGetSessionRequest(input.login, input.password, input.kindleId)
+	req := model.NewGetSessionRequest(input.login, input.password, input.kindleId)
 	encodeAndCheckMap(t, "session", req, expected)
 }
 
@@ -56,7 +57,7 @@ func TestBookListRequestEncoding(t *testing.T) {
 		3: {0x04, 0x00, 0x00, 0x00, 0xf4, 0x01, 0x00, 0x00},
 	}
 
-	req := protocol.NewBookListRequest(input.sessionId)
+	req := model.NewBookListRequest(input.sessionId)
 	encodeAndCheckMap(t, "list books", req, expected)
 
 	addNewFilter := func(expected map[int][]byte, key int, filter []byte) {
@@ -96,7 +97,7 @@ func TestBookDownloadDetailsRequestEncoding(t *testing.T) {
 		0xff, 0xff, 0xff, 0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
 	}
 
-	req := protocol.NewBookDownloadDetailsRequest(input.sessionId, input.bookId, input.bookVersion)
+	req := model.NewBookDownloadDetailsRequest(input.sessionId, input.bookId, input.bookVersion)
 	encodeAndCheck(t, "book download details", req, expected)
 }
 

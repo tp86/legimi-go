@@ -1,4 +1,4 @@
-package protocol
+package model
 
 type loginData struct {
 	login    string

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/tp86/legimi-go/internal/api"
-	"github.com/tp86/legimi-go/internal/api/protocol"
+	"github.com/tp86/legimi-go/internal/model"
 	"github.com/tp86/legimi-go/internal/service"
 )
 
@@ -21,8 +21,8 @@ func (bs defaultBookService) ListBooks() error {
 		return err
 	}
 	list := make([]string, 0)
-	request := protocol.NewBookListRequest(sessionId)
-	var bookList protocol.BookList
+	request := model.NewBookListRequest(sessionId)
+	var bookList model.BookList
 	for {
 		err := bs.client.Exchange(request, &bookList)
 		if err != nil {

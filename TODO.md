@@ -1,2 +1,3 @@
-- [ ] domain models
+- [x] domain models
 - [ ] view "service"
+- [ ] error handling - error response types
