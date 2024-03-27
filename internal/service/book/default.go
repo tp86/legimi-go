@@ -2,7 +2,6 @@ package book
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/tp86/legimi-go/internal/api"
 	"github.com/tp86/legimi-go/internal/model"
@@ -14,32 +13,29 @@ type defaultBookService struct {
 	client         api.Client
 }
 
-func (bs defaultBookService) ListBooks() error {
+func (bs defaultBookService) ListBooks() ([]model.BookMetadata, error) {
 	// TODO better error handling
 	sessionId, err := bs.sessionService.GetSession()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	list := make([]string, 0)
+	list := make([]model.BookMetadata, 0)
 	request := model.NewBookListRequest(sessionId)
 	var bookList model.BookList
 	for {
 		err := bs.client.Exchange(request, &bookList)
 		if err != nil {
-			return err
+			return list, err
 		}
 		if len(bookList) == 0 {
 			break
 		}
 		for _, book := range bookList {
-			list = append(list, book.String())
+			list = append(list, book)
 		}
 		request.NextPage = bookList[len(bookList)-1].NextPage
 	}
-	for _, entry := range list {
-		fmt.Println(entry)
-	}
-	return nil
+	return list, nil
 }
 
 func (bs defaultBookService) DownloadBooks(bookIds []uint64) error {

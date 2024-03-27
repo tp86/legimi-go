@@ -5,6 +5,7 @@ import (
 	ar "github.com/tp86/legimi-go/internal/repository/account"
 	as "github.com/tp86/legimi-go/internal/service/account"
 	"github.com/tp86/legimi-go/internal/service/book"
+	"github.com/tp86/legimi-go/internal/service/presenter"
 	"github.com/tp86/legimi-go/internal/service/session"
 )
 
@@ -15,4 +16,5 @@ func init() {
 	sessionService := session.DefaultService(accountService, apiClient)
 	bookService := book.DefaultService(sessionService, apiClient)
 	bookLister = bookService
+	bookListPresenter = presenter.DefaultService()
 }

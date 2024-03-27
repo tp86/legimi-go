@@ -1,7 +1,9 @@
 package usecase
 
+import "github.com/tp86/legimi-go/internal/model"
+
 type BookLister interface {
-	ListBooks() error
+	ListBooks() ([]model.BookMetadata, error)
 }
 
 type BookDownloader interface {

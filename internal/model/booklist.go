@@ -138,10 +138,6 @@ func (bm *BookMetadata) Decode(r io.Reader) (int, error) {
 	return bytesRead, err
 }
 
-func (bm BookMetadata) String() string {
-	return fmt.Sprintf("%9d: \"%s\", %s, downloaded: %t", bm.Id, bm.Title, bm.Author, bm.Downloaded)
-}
-
 func checkBookListMetadataIsSupported(r io.Reader) (int, error) {
 	var metadataType uint8
 	bytesRead, err := encoding.Decode(r, &metadataType)
