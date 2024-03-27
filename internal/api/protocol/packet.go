@@ -30,8 +30,10 @@ func Decode(r io.Reader, resp Response) error {
 	var responseType uint16
 	encoding.Decode(r, &responseType)
 	if responseType != resp.Type() {
-		if errorResponse, isErrorResponse := errorResponses[responseType]; isErrorResponse {
-			return fmt.Errorf("received error response: %v", errorResponse)
+		if isErrorResponse(responseType) {
+			return ErrorResponse{
+				Type: responseType,
+			}
 		}
 		return fmt.Errorf("unexpected response type: %d, expected: %d", responseType, resp.Type())
 	}

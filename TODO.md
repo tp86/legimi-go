@@ -1,3 +1,4 @@
 - [x] domain models
 - [x] view "service"
-- [ ] error handling - error response types
+- [x] error handling - error response types
+- [ ] downloading books
