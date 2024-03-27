@@ -79,15 +79,30 @@ func (f filter) EncodedLength() int {
 		encoding.U16Length + encoding.EncodedLength(f.Data)
 }
 
+const (
+	filterBookList                = 2
+	filterBookFormat              = 14
+	filterBookFormatKindle uint16 = 8
+	filterId                      = 10
+	filterPagingType              = 4
+	filterPagingSubtype           = 600
+	filterPageSizeKey             = 3
+	filterPageDefaultSize  uint32 = 500
+	filterPageNextKey             = 4
+)
+
 func makeFilters(l BookListRequest) []filter {
-	data := encoding.Map{3: uint32(500)}
+	data := encoding.Map{filterPageSizeKey: filterPageDefaultSize}
 	if l.NextPage != "" {
-		data[4] = l.NextPage
+		data[filterPageNextKey] = l.NextPage
 	}
-	secondFilter := filter{4, 600, data}
+	pagingFilter := filter{filterPagingType, filterPagingSubtype, data}
+
+	booksFilter := filter{filterBookList, filterBookFormat, filterBookFormatKindle}
+
 	return []filter{
-		{2, 14, uint16(8)},
-		secondFilter,
+		booksFilter,
+		pagingFilter,
 	}
 }
 
