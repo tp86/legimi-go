@@ -10,6 +10,7 @@ import (
 var (
 	bookLister        usecase.BookLister
 	bookListPresenter service.BookListPresenter
+	bookDownloader    usecase.BookDownloader
 )
 
 func main() {
@@ -18,4 +19,9 @@ func main() {
 		fmt.Println(err)
 	}
 	bookListPresenter.Present(bookList)
+	bookId := 1022214
+	err = bookDownloader.DownloadBooks([]uint64{uint64(bookId)})
+	if err != nil {
+		fmt.Println(err)
+	}
 }

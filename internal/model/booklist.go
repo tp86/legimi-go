@@ -10,6 +10,7 @@ import (
 type BookListRequest struct {
 	session
 	NextPage string
+	BookId   uint64
 }
 
 func NewBookListRequest(sessionId string) BookListRequest {
@@ -74,16 +75,16 @@ func (f filter) Encode(w io.Writer) error {
 }
 
 func (f filter) EncodedLength() int {
-	return encoding.U8Length +
-		encoding.U16Length +
-		encoding.U16Length + encoding.EncodedLength(f.Data)
+	return encoding.U8Length /*filter type*/ +
+		encoding.U16Length /*filter subtype*/ +
+		encoding.U16Length /*filter data length*/ + encoding.EncodedLength(f.Data) /*filter data*/
 }
 
 const (
 	filterBookList                = 2
 	filterBookFormat              = 14
 	filterBookFormatKindle uint16 = 8
-	filterId                      = 10
+	filterBookId                  = 10
 	filterPagingType              = 4
 	filterPagingSubtype           = 600
 	filterPageSizeKey             = 3
@@ -91,19 +92,28 @@ const (
 	filterPageNextKey             = 4
 )
 
-func makeFilters(l BookListRequest) []filter {
+func makePagingFilter(l BookListRequest) filter {
 	data := encoding.Map{filterPageSizeKey: filterPageDefaultSize}
 	if l.NextPage != "" {
 		data[filterPageNextKey] = l.NextPage
 	}
-	pagingFilter := filter{filterPagingType, filterPagingSubtype, data}
+	return filter{filterPagingType, filterPagingSubtype, data}
+}
 
-	booksFilter := filter{filterBookList, filterBookFormat, filterBookFormatKindle}
-
-	return []filter{
-		booksFilter,
-		pagingFilter,
+func makeBookFilters(l BookListRequest) []filter {
+	filters := []filter{
+		{filterBookList, filterBookFormat, filterBookFormatKindle},
 	}
+	if l.BookId != 0 {
+		filters = append(filters, filter{filterBookList, filterBookId, l.BookId})
+	}
+	return filters
+}
+
+func makeFilters(l BookListRequest) []filter {
+	filters := makeBookFilters(l)
+	filters = append(filters, makePagingFilter(l))
+	return filters
 }
 
 type BookList encoding.Array[BookMetadata]

@@ -16,5 +16,6 @@ func init() {
 	sessionService := session.DefaultService(accountService, apiClient)
 	bookService := book.DefaultService(sessionService, apiClient)
 	bookLister = bookService
+	bookDownloader = bookService
 	bookListPresenter = presenter.DefaultService()
 }
