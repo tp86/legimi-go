@@ -13,8 +13,9 @@ import (
 )
 
 type defaultBookService struct {
-	sessionService service.Session
-	client         api.Client
+	sessionService    service.Session
+	client            api.Client
+	downloadPresenter service.DownloadPresenter
 }
 
 func (bs defaultBookService) ListBooks() ([]model.BookMetadata, error) {
@@ -60,6 +61,7 @@ func (bs defaultBookService) downloadBook(id uint64) error {
 	if err != nil {
 		return err
 	}
+	// get book metadata
 	metadataRequest := model.NewBookListRequest(sessionId)
 	metadataRequest.BookId = id
 	var bookList model.BookList
@@ -71,22 +73,25 @@ func (bs defaultBookService) downloadBook(id uint64) error {
 		return fmt.Errorf("unexpected book metadata list count: %d, expected 1", len(bookList))
 	}
 	book := bookList[0]
+	// get book download details
 	downloadDetailsRequest := model.NewBookDownloadDetailsRequest(sessionId, book.Id, book.Version)
 	var bookDownloadDetails model.BookDownloadDetails
 	err = bs.client.Exchange(downloadDetailsRequest, &bookDownloadDetails)
 	if err != nil {
 		return err
 	}
-	request, err := http.NewRequest(http.MethodGet, bookDownloadDetails.Url, nil)
-	if err != nil {
-		return err
-	}
-	client := http.Client{Timeout: 30 * time.Second}
+	// download book
+	bs.downloadPresenter.Start(book)
 	file, err := os.Create(fmt.Sprintf("%d.mobi", book.Id))
 	if err != nil {
 		return err
 	}
 	defer file.Close()
+	client := http.Client{Timeout: 30 * time.Second}
+	request, err := http.NewRequest(http.MethodGet, bookDownloadDetails.Url, nil)
+	if err != nil {
+		return err
+	}
 	var downloadedBytes uint64 = 0
 	for i := uint64(0); downloadedBytes < bookDownloadDetails.Size; i++ {
 		request.Header.Set("range", fmt.Sprintf("bytes=%d-%d", i*downloadChunkSize, min((i+1)*downloadChunkSize-1, bookDownloadDetails.Size)))
@@ -100,6 +105,8 @@ func (bs defaultBookService) downloadBook(id uint64) error {
 			return err
 		}
 		downloadedBytes += uint64(bytesRead)
+		bs.downloadPresenter.Part(book)
 	}
+	bs.downloadPresenter.End(book)
 	return nil
 }

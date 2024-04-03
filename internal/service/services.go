@@ -22,3 +22,9 @@ type Book interface {
 type BookListPresenter interface {
 	Present([]model.BookMetadata)
 }
+
+type DownloadPresenter interface {
+	Start(model.BookMetadata)
+	Part(model.BookMetadata)
+	End(model.BookMetadata)
+}

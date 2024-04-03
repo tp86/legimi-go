@@ -14,8 +14,9 @@ func init() {
 	accountService := as.DefaultService(accountRepository)
 	apiClient := api.GetClient()
 	sessionService := session.DefaultService(accountService, apiClient)
-	bookService := book.DefaultService(sessionService, apiClient)
+	bookDownloadPresenter := presenter.DefaultBookDownloadPresenter()
+	bookService := book.DefaultService(sessionService, apiClient, bookDownloadPresenter)
 	bookLister = bookService
 	bookDownloader = bookService
-	bookListPresenter = presenter.DefaultService()
+	bookListPresenter = presenter.DefaultBookListPresenter()
 }

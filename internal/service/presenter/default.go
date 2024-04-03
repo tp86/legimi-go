@@ -13,3 +13,17 @@ func (defaultBookListPresenter) Present(bookList []model.BookMetadata) {
 		fmt.Printf("%8d: \"%s\", %s, downloaded: %t\n", book.Id, book.Title, book.Author, book.Downloaded)
 	}
 }
+
+type defaultBookDownloadPresenter struct{}
+
+func (defaultBookDownloadPresenter) Start(book model.BookMetadata) {
+	fmt.Printf("Downloading book %d: \"%s\" ", book.Id, book.Title)
+}
+
+func (defaultBookDownloadPresenter) Part(book model.BookMetadata) {
+	fmt.Print(".")
+}
+
+func (defaultBookDownloadPresenter) End(book model.BookMetadata) {
+	fmt.Println(" done")
+}

@@ -8,9 +8,11 @@ import (
 func DefaultService(
 	sessionService service.Session,
 	apiClient api.Client,
+	bookDownloadPresenter service.DownloadPresenter,
 ) service.Book {
 	return defaultBookService{
-		sessionService: sessionService,
-		client:         apiClient,
+		sessionService:    sessionService,
+		client:            apiClient,
+		downloadPresenter: bookDownloadPresenter,
 	}
 }
