@@ -6,6 +6,7 @@ import "fmt"
 var errorResponses = map[uint16]string{
 	133: "invalid credentials",
 	163: "invalid kindle id",
+	295: "book download preparing",
 }
 
 type ErrorResponse struct {

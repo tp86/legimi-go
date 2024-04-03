@@ -62,6 +62,7 @@ func (bs defaultBookService) downloadBook(id uint64) error {
 		return err
 	}
 	// get book metadata
+	// TODO handle error 295 - repeat?
 	metadataRequest := model.NewBookListRequest(sessionId)
 	metadataRequest.BookId = id
 	var bookList model.BookList
