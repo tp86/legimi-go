@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/tp86/legimi-go/internal/api"
+	"github.com/tp86/legimi-go/internal/api/protocol"
 	"github.com/tp86/legimi-go/internal/model"
 	"github.com/tp86/legimi-go/internal/service"
 )
@@ -52,8 +53,6 @@ func (bs defaultBookService) DownloadBooks(bookIds []uint64) error {
 	return errors.Join(errs...)
 }
 
-const downloadChunkSize uint64 = 81920
-
 func (bs defaultBookService) downloadBook(id uint64) error {
 	// TODO refactor
 	// TODO concurrent downloader
@@ -61,27 +60,59 @@ func (bs defaultBookService) downloadBook(id uint64) error {
 	if err != nil {
 		return err
 	}
-	// get book metadata
-	// TODO handle error 295 - repeat?
-	metadataRequest := model.NewBookListRequest(sessionId)
-	metadataRequest.BookId = id
-	var bookList model.BookList
-	err = bs.client.Exchange(metadataRequest, &bookList)
+	book, err := bs.getBookMetadata(sessionId, id)
 	if err != nil {
 		return err
+	}
+	bookDownloadDetails, err := bs.getBookDownloadDetails(sessionId, book)
+	if err != nil {
+		return err
+	}
+	return bs.download(book, bookDownloadDetails)
+}
+
+func (bs defaultBookService) getBookMetadata(sessionId string, bookId uint64) (model.BookMetadata, error) {
+	metadataRequest := model.NewBookListRequest(sessionId)
+	metadataRequest.BookId = bookId
+	var bookList model.BookList
+	err := bs.client.Exchange(metadataRequest, &bookList)
+	if err != nil {
+		return model.BookMetadata{}, err
 	}
 	if len(bookList) != 1 {
-		return fmt.Errorf("unexpected book metadata list count: %d, expected 1", len(bookList))
+		return model.BookMetadata{}, fmt.Errorf("unexpected book metadata list count: %d, expected 1", len(bookList))
 	}
-	book := bookList[0]
-	// get book download details
+	return bookList[0], nil
+}
+
+const maxDownloadDetailsGetAttempts = 5
+
+func (bs defaultBookService) getBookDownloadDetails(sessionId string, book model.BookMetadata) (model.BookDownloadDetails, error) {
 	downloadDetailsRequest := model.NewBookDownloadDetailsRequest(sessionId, book.Id, book.Version)
 	var bookDownloadDetails model.BookDownloadDetails
-	err = bs.client.Exchange(downloadDetailsRequest, &bookDownloadDetails)
-	if err != nil {
-		return err
+	// TODO refactor & test
+	attempt := 0
+	for ; attempt < maxDownloadDetailsGetAttempts; attempt++ {
+		if err := bs.client.Exchange(downloadDetailsRequest, &bookDownloadDetails); err != nil {
+			if err, ok := err.(protocol.ErrorResponse); ok && err.Type == protocol.BookDownloadDetailsPreparingError {
+				// special case - download details are being prepared, try to repeat after some time
+				bs.downloadPresenter.Wait(book)
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			return bookDownloadDetails, err
+		}
+		break
 	}
-	// download book
+	if attempt == maxDownloadDetailsGetAttempts {
+		return bookDownloadDetails, fmt.Errorf("couldn't get download details after %d attempts, try downloading book again after some time", attempt)
+	}
+	return bookDownloadDetails, nil
+}
+
+const downloadChunkSize uint64 = 81920
+
+func (bs defaultBookService) download(book model.BookMetadata, downloadDetails model.BookDownloadDetails) error {
 	bs.downloadPresenter.Start(book)
 	file, err := os.Create(fmt.Sprintf("%d.mobi", book.Id))
 	if err != nil {
@@ -89,13 +120,13 @@ func (bs defaultBookService) downloadBook(id uint64) error {
 	}
 	defer file.Close()
 	client := http.Client{Timeout: 30 * time.Second}
-	request, err := http.NewRequest(http.MethodGet, bookDownloadDetails.Url, nil)
+	request, err := http.NewRequest(http.MethodGet, downloadDetails.Url, nil)
 	if err != nil {
 		return err
 	}
 	var downloadedBytes uint64 = 0
-	for i := uint64(0); downloadedBytes < bookDownloadDetails.Size; i++ {
-		request.Header.Set("range", fmt.Sprintf("bytes=%d-%d", i*downloadChunkSize, min((i+1)*downloadChunkSize-1, bookDownloadDetails.Size)))
+	for i := uint64(0); downloadedBytes < downloadDetails.Size; i++ {
+		request.Header.Set("range", fmt.Sprintf("bytes=%d-%d", i*downloadChunkSize, min((i+1)*downloadChunkSize-1, downloadDetails.Size)))
 		response, err := client.Do(request)
 		if err != nil {
 			return err

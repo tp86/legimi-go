@@ -27,4 +27,5 @@ type DownloadPresenter interface {
 	Start(model.BookMetadata)
 	Part(model.BookMetadata)
 	End(model.BookMetadata)
+	Wait(model.BookMetadata)
 }

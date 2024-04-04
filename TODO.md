@@ -1,4 +1,5 @@
 - [x] domain models
 - [x] view "service"
 - [x] error handling - error response types
-- [ ] downloading books
+- [x] downloading books
+- [ ] handle occassional EOF while getting list of books

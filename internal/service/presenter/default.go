@@ -27,3 +27,7 @@ func (defaultBookDownloadPresenter) Part(book model.BookMetadata) {
 func (defaultBookDownloadPresenter) End(book model.BookMetadata) {
 	fmt.Println(" done")
 }
+
+func (defaultBookDownloadPresenter) Wait(book model.BookMetadata) {
+	fmt.Printf("Waiting for book %d: \"%s\" to be ready for download.\n", book.Id, book.Title)
+}
