@@ -2,4 +2,5 @@
 - [x] view "service"
 - [x] error handling - error response types
 - [x] downloading books
+- [ ] configuration file
 - [ ] handle occassional EOF while getting list of books
