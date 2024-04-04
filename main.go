@@ -15,37 +15,49 @@ var (
 	bookDownloader    usecase.BookDownloader
 )
 
-var commandMap = map[string]func([]string) error{
-	"list":     listBooks,
-	"download": downloadBooks,
+type command struct {
+	Exec func() error
+}
+
+var commandNames = []string{
+	"list",
+	"download",
 }
 
 func main() {
-	configFile := flag.String("config", "default/location", "config file location")
-	flag.Parse()
-	fmt.Println(*configFile)
-	args := flag.Args()
-	commands := make([]string, 0, len(commandMap))
-	for name := range commandMap {
-		commands = append(commands, name)
-	}
-	if len(args) < 1 {
-		fmt.Printf("expected one of commands: %s\n", strings.Join(commands, ", "))
-		return
-	}
-	commandName := args[0]
-	command, ok := commandMap[commandName]
-	if !ok {
-		fmt.Printf("unknown command: %s\n", commandName)
-		return
-	}
-	err := command(args[1:])
+	command, err := parseCommand()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Error parsing arguments: %v\n", err)
+		return
+	}
+	err = command.Exec()
+	if err != nil {
+		fmt.Printf("Error while executing command: %v\n", err)
+		return
 	}
 }
 
-func listBooks([]string) error {
+func parseCommand() (command, error) {
+	// configFile := flag.String("config", "default/location", "config file location")
+	flag.Parse()
+	args := flag.Args()
+	if len(args) < 1 {
+		return command{}, fmt.Errorf("expected one of commands: %s\n", strings.Join(commandNames, ", "))
+	}
+	commandName := args[0]
+	switch commandName {
+	case "list":
+		return command{Exec: listBooks}, nil
+	case "download":
+		return command{Exec: func() error {
+			return downloadBooks(args[1:])
+		}}, nil
+	default:
+		return command{}, fmt.Errorf("unsupported command: %s", commandName)
+	}
+}
+
+func listBooks() error {
 	bookList, err := bookLister.ListBooks()
 	if err != nil {
 		return err
@@ -55,17 +67,15 @@ func listBooks([]string) error {
 }
 
 func downloadBooks(ids []string) error {
-	if len(ids) < 1 {
+	if len(ids) == 0 {
 		return fmt.Errorf("no book id provided")
 	}
-	// only first book id supported for now
-	var bookId uint64
-	n, err := fmt.Sscanf(ids[0], "%d", &bookId)
-	if err != nil {
-		return err
+	bookIds := make([]uint64, len(ids))
+	for i, id := range ids {
+		_, err := fmt.Sscanf(id, "%d", &bookIds[i])
+		if err != nil {
+			return err
+		}
 	}
-	if n != 1 {
-		return fmt.Errorf("couldn't parse book id")
-	}
-	return bookDownloader.DownloadBooks([]uint64{uint64(bookId)})
+	return bookDownloader.DownloadBooks(bookIds)
 }

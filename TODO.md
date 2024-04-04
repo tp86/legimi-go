@@ -3,4 +3,5 @@
 - [x] error handling - error response types
 - [x] downloading books
 - [ ] configuration file
+- [ ] get all books metadata first, then attempt getting download details
 - [ ] handle occassional EOF while getting list of books
