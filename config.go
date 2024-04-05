@@ -32,13 +32,13 @@ func usage() {
 	}
 	optionsHeader := "General options are:\n"
 	flagPrint(usageHeader)
-	fmt.Println()
+	flagPrint("\n")
 	flagPrint(commandsHeader)
 	flagPrint(commandsUsage.String())
-	fmt.Println()
+	flagPrint("\n")
 	flagPrint(optionsHeader)
 	flag.PrintDefaults()
-	fmt.Println()
+	flagPrint("\n")
 }
 
 func init() {
