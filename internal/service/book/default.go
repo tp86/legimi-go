@@ -54,7 +54,6 @@ func (bs defaultBookService) DownloadBooks(bookIds []uint64) error {
 }
 
 func (bs defaultBookService) downloadBook(id uint64) error {
-	// TODO refactor
 	// TODO concurrent downloader
 	sessionId, err := bs.sessionService.GetSession()
 	if err != nil {

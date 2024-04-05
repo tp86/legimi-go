@@ -1,7 +1,9 @@
 package commands
 
 import (
+	"flag"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/tp86/legimi-go/internal/options"
@@ -9,31 +11,51 @@ import (
 	"github.com/tp86/legimi-go/internal/usecase"
 )
 
-type Command func() error
-
-var noneCommand Command = func() error {
-	return fmt.Errorf("this should never be called")
+type Command struct {
+	Name        string
+	Args        string
+	Description string
+	Run         func() error
 }
 
-var commandNames = []string{
-	"list",
-	"download",
+var noneCommand = Command{
+	Run: func() error {
+		return fmt.Errorf("this should never be called")
+	},
 }
+
+var (
+	Commands = []Command{
+		{Name: "list", Run: listBooks, Description: "list books on shelf"},
+		{Name: "download", Args: "id ...", Run: downloadBooks, Description: "download book(s) with given id(s)"},
+	}
+)
 
 func ParseCommandLine() (Command, error) {
-	args := options.ParseArgs()
+	options.Configure()
+	flag.Parse()
+	args := flag.Args()
 	if len(args) < 1 {
-		return noneCommand, fmt.Errorf("expected one of commands: %s\n", strings.Join(commandNames, ", "))
+		names := make([]string, len(Commands))
+		for i, command := range Commands {
+			names[i] = command.Name
+		}
+		return noneCommand, fmt.Errorf("expected one of commands: %s\n", strings.Join(names, ", "))
 	}
 	commandName := args[0]
-	switch commandName {
-	case "list":
-		return listBooks, nil
-	case "download":
-		return downloadBooks(args[1:]), nil
-	default:
-		return noneCommand, fmt.Errorf("unsupported command: %s", commandName)
+	if command, ok := findCommand(commandName); ok {
+		return command, nil
 	}
+	return noneCommand, fmt.Errorf("unsupported command: %s", commandName)
+}
+
+func findCommand(name string) (Command, bool) {
+	for _, command := range Commands {
+		if command.Name == name {
+			return command, true
+		}
+	}
+	return noneCommand, false
 }
 
 var (
@@ -51,18 +73,19 @@ func listBooks() error {
 	return nil
 }
 
-func downloadBooks(ids []string) Command {
-	return func() error {
-		if len(ids) == 0 {
-			return fmt.Errorf("no book id provided")
-		}
-		bookIds := make([]uint64, len(ids))
-		for i, id := range ids {
-			_, err := fmt.Sscanf(id, "%d", &bookIds[i])
-			if err != nil {
-				return err
-			}
-		}
-		return BookDownloader.DownloadBooks(bookIds)
+func downloadBooks() error {
+	ids := flag.Args()[1:]
+	if len(ids) == 0 {
+		return fmt.Errorf("no book id provided")
 	}
+	bookIds := make([]uint64, len(ids))
+	for i, id := range ids {
+		v, err := strconv.ParseUint(id, 10, 64)
+		if err != nil {
+			err := err.(*strconv.NumError)
+			return fmt.Errorf("couldn't parse id '%s': %s", id, err.Err)
+		}
+		bookIds[i] = v
+	}
+	return BookDownloader.DownloadBooks(bookIds)
 }
