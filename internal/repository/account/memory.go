@@ -1,21 +1,8 @@
 package account
 
-import "github.com/tp86/legimi-go/internal/repository"
-
 type MemoryAccountRepository struct {
 	Login, Password string
 	KindleId        uint64
-}
-
-var (
-	mar *MemoryAccountRepository
-)
-
-func GetMemoryRepository() repository.Account {
-	if mar == nil {
-		mar = &MemoryAccountRepository{}
-	}
-	return mar
 }
 
 func (mar MemoryAccountRepository) GetLogin() string {
