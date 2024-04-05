@@ -8,6 +8,7 @@ import (
 
 	"github.com/tp86/legimi-go/internal/api"
 	"github.com/tp86/legimi-go/internal/commands"
+	"github.com/tp86/legimi-go/internal/options"
 	ar "github.com/tp86/legimi-go/internal/repository/account"
 	as "github.com/tp86/legimi-go/internal/service/account"
 	"github.com/tp86/legimi-go/internal/service/book"
@@ -43,7 +44,7 @@ func usage() {
 func init() {
 	flag.Usage = usage
 	accountRepository := ar.GetMemoryRepository()
-	accountService := as.DefaultService(accountRepository)
+	accountService := as.DefaultService(accountRepository, options.Login, options.Password)
 	apiClient := api.GetClient()
 	sessionService := session.DefaultService(accountService, apiClient)
 	bookDownloadPresenter := presenter.DefaultBookDownloadPresenter()
