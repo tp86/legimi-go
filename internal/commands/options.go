@@ -7,27 +7,17 @@ import (
 	"strings"
 )
 
-var (
-	configurationFile string
-	login             string
-	password          string
-)
-
 var Options = struct {
-	Login             *string
-	Password          *string
-	ConfigurationFile *string
-}{
-	Login:             &login,
-	Password:          &password,
-	ConfigurationFile: &configurationFile,
-}
+	Login             string
+	Password          string
+	ConfigurationFile string
+}{}
 
 func configureFlags() {
 	flag.Usage = usage
-	flag.StringVar(Options.ConfigurationFile, "config", "default/location", "config file location")
-	flag.StringVar(Options.Login, "login", "", "Legimi login")
-	flag.StringVar(Options.Password, "password", "", "Legimi password")
+	flag.StringVar(&Options.ConfigurationFile, "config", "default/location", "config file location")
+	flag.StringVar(&Options.Login, "login", "", "Legimi login")
+	flag.StringVar(&Options.Password, "password", "", "Legimi password")
 }
 
 func flagPrint(what string) {

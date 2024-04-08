@@ -6,19 +6,19 @@ import (
 
 type defaultAccountService struct {
 	accountRepository repository.Account
-	login             *string
-	password          *string
+	login             string
+	password          string
 }
 
 func (as defaultAccountService) GetCredentials() (string, string) {
 	var (
 		login, password string
 	)
-	if *as.login != "" {
-		login = *as.login
+	if as.login != "" {
+		login = as.login
 	}
-	if *as.password != "" {
-		password = *as.password
+	if as.password != "" {
+		password = as.password
 	}
 	if login == "" {
 		login = as.accountRepository.GetLogin()
