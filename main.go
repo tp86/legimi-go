@@ -12,6 +12,7 @@ func main() {
 		fmt.Printf("Error parsing command line: %v\n", err)
 		return
 	}
+	configure()
 	err = command.Run()
 	if err != nil {
 		fmt.Printf("Error while executing command: %v\n", err)

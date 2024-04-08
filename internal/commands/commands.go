@@ -6,15 +6,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tp86/legimi-go/internal/options"
 	"github.com/tp86/legimi-go/internal/service"
 	"github.com/tp86/legimi-go/internal/usecase"
 )
 
 type Command struct {
-	Name        string
-	Args        string
-	Description string
+	name        string
+	args        string
+	description string
 	Run         func() error
 }
 
@@ -26,19 +25,19 @@ var noneCommand = Command{
 
 var (
 	Commands = []Command{
-		{Name: "list", Run: listBooks, Description: "list books on shelf"},
-		{Name: "download", Args: "id ...", Run: downloadBooks, Description: "download book(s) with given id(s)"},
+		{name: "list", Run: listBooks, description: "list books on shelf"},
+		{name: "download", args: "id ...", Run: downloadBooks, description: "download book(s) with given id(s)"},
 	}
 )
 
 func ParseCommandLine() (Command, error) {
-	options.Configure()
+	configureFlags()
 	flag.Parse()
 	args := flag.Args()
 	if len(args) < 1 {
 		names := make([]string, len(Commands))
 		for i, command := range Commands {
-			names[i] = command.Name
+			names[i] = command.name
 		}
 		return noneCommand, fmt.Errorf("expected one of commands: %s\n", strings.Join(names, ", "))
 	}
@@ -51,7 +50,7 @@ func ParseCommandLine() (Command, error) {
 
 func findCommand(name string) (Command, bool) {
 	for _, command := range Commands {
-		if command.Name == name {
+		if command.name == name {
 			return command, true
 		}
 	}
