@@ -2,6 +2,7 @@
 - [x] view "service"
 - [x] error handling - error response types
 - [x] downloading books
-- [ ] configuration file
+- [x] configuration file
 - [ ] get all books metadata first, then attempt getting download details
 - [ ] handle occassional EOF while getting list of books
+- [ ] session reuse where possible

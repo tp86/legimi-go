@@ -4,6 +4,7 @@ import "github.com/tp86/legimi-go/internal/repository"
 
 var (
 	mar *MemoryAccountRepository
+	ar  repository.Account
 )
 
 func GetMemoryRepository() repository.Account {
@@ -11,4 +12,11 @@ func GetMemoryRepository() repository.Account {
 		mar = &MemoryAccountRepository{}
 	}
 	return mar
+}
+
+func GetFileRepository(configFile string) repository.Account {
+	if ar == nil {
+		ar = newFileAccountRepository(configFile)
+	}
+	return ar
 }

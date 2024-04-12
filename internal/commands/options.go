@@ -13,9 +13,13 @@ var Options = struct {
 	ConfigurationFile string
 }{}
 
+func defaultConfigurationFile() string {
+	return os.Getenv("HOME") + "/.config/legimi-go/config.ini"
+}
+
 func configureFlags() {
 	flag.Usage = usage
-	flag.StringVar(&Options.ConfigurationFile, "config", "default/location", "config file location")
+	flag.StringVar(&Options.ConfigurationFile, "config", defaultConfigurationFile(), "path to configuration file")
 	flag.StringVar(&Options.Login, "login", "", "Legimi login")
 	flag.StringVar(&Options.Password, "password", "", "Legimi password")
 }
