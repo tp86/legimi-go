@@ -7,21 +7,35 @@ import (
 	"strings"
 )
 
-var Options = struct {
-	Login             string
-	Password          string
-	ConfigurationFile string
-}{}
-
 func defaultConfigurationFile() string {
 	return os.Getenv("HOME") + "/.config/legimi-go/config.ini"
 }
 
+type options struct {
+	login             string
+	password          string
+	configurationFile string
+}
+
+var Options options
+
+func (o options) GetLogin() string {
+	return o.login
+}
+
+func (o options) GetPassword() string {
+	return o.password
+}
+
+func (o options) GetFile() string {
+	return o.configurationFile
+}
+
 func configureFlags() {
 	flag.Usage = usage
-	flag.StringVar(&Options.ConfigurationFile, "config", defaultConfigurationFile(), "path to configuration file")
-	flag.StringVar(&Options.Login, "login", "", "Legimi login")
-	flag.StringVar(&Options.Password, "password", "", "Legimi password")
+	flag.StringVar(&Options.configurationFile, "config", defaultConfigurationFile(), "path to configuration file")
+	flag.StringVar(&Options.login, "login", "", "Legimi login")
+	flag.StringVar(&Options.password, "password", "", "Legimi password")
 }
 
 func flagPrint(what string) {

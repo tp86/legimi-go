@@ -1,6 +1,9 @@
 package account
 
-import "github.com/tp86/legimi-go/internal/repository"
+import (
+	"github.com/tp86/legimi-go/internal/options"
+	"github.com/tp86/legimi-go/internal/repository"
+)
 
 var (
 	mar *MemoryAccountRepository
@@ -14,9 +17,9 @@ func GetMemoryRepository() repository.Account {
 	return mar
 }
 
-func GetFileRepository(configFile string) repository.Account {
+func GetFileRepository(opts options.Configuration) repository.Account {
 	if ar == nil {
-		ar = newFileAccountRepository(configFile)
+		ar = newFileAccountRepository(opts.GetFile())
 	}
 	return ar
 }

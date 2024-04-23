@@ -11,9 +11,9 @@ import (
 )
 
 func configure() {
-	accountRepository := ar.GetFileRepository(commands.Options.ConfigurationFile)
+	accountRepository := ar.GetFileRepository(commands.Options)
 	apiClient := api.GetClient()
-	accountService := as.DefaultService(accountRepository, apiClient, commands.Options.Login, commands.Options.Password)
+	accountService := as.DefaultService(accountRepository, apiClient, commands.Options)
 	sessionService := session.DefaultService(accountService, apiClient)
 	bookDownloadPresenter := presenter.DefaultBookDownloadPresenter()
 	bookService := book.DefaultService(sessionService, apiClient, bookDownloadPresenter)
