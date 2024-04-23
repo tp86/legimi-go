@@ -13,7 +13,7 @@ You can find more information about how it came about in [Background](#backgroun
 
 ## Installation
 
-Simply download archive from Releases section, unpack and make it executable: `$ chmod +x legimi-go`.
+Simply download archive from Releases section, unpack and make it executable (if needed): `$ chmod +x legimi-go`.
 You can add installation directory to your `PATH` variable to be able to run it from anywhere, of course.
 
 Alternatively, if you have Go installed, you can install it using `go install` command:
