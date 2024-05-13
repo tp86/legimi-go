@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"io"
 	"net/http"
 
 	"github.com/tp86/legimi-go/internal/api/protocol"
@@ -33,5 +34,9 @@ func (c defaultClient) Exchange(request protocol.Request, response protocol.Resp
 		return err
 	}
 	defer resp.Body.Close()
-	return protocol.Decode(resp.Body, response)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	return protocol.Decode(bytes.NewBuffer(body), response)
 }

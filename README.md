@@ -139,5 +139,5 @@ See [Limitations](#limitations) for more missing features.
 - [ ] increase test coverage
 - [ ] reuse session id if possible
 - [ ] parallel downloader
-- [ ] handle occassional EOF while getting list of books
+- [x] handle occassional EOF while getting list of books
 - [ ] option to specify directory for downloaded books
