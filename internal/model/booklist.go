@@ -1,8 +1,10 @@
 package model
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/tp86/legimi-go/internal/api/protocol/encoding"
 )
@@ -132,6 +134,8 @@ func (bl BookList) Type() uint16 {
 }
 
 func (bl *BookList) Decode(r io.Reader) (int, error) {
+	copy := new(bytes.Buffer)
+	r = io.TeeReader(r, copy)
 	blSlice := *bl
 	if blSlice == nil {
 		blSlice = make([]BookMetadata, 0)
@@ -141,6 +145,15 @@ func (bl *BookList) Decode(r io.Reader) (int, error) {
 	if err != nil {
 		return n, err
 	}
+
+	file, err := os.OpenFile("booklist.dump", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		return n, err
+	}
+	defer file.Close()
+	file.ReadFrom(copy)
+	file.WriteString("\n\n")
+
 	*bl = BookList(array)
 	return n, err
 }
