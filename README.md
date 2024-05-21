@@ -53,6 +53,7 @@ All command line switches are optional.
     If you don't provide login from command line, it will be read from configuration file.
     If it is missing in configuration file as well, you will be asked to provide it during command execution.
     It will be then stored in configuration file, so you don't have to repeat it during future command runs.
+    If you do provide login from command line, it will not be written to configuration file.
 
 -   `--password password`
 
