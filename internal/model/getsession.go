@@ -1,7 +1,9 @@
 package model
 
 import (
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/tp86/legimi-go/internal/api/protocol"
 	"github.com/tp86/legimi-go/internal/api/protocol/encoding"
@@ -52,4 +54,10 @@ func (s *Session) Decode(r io.Reader) (int, error) {
 
 func (s Session) Type() uint16 {
 	return 0x4002
+}
+
+func (s Session) DebugFormat() string {
+	var b strings.Builder
+	b.WriteString("Session response:\n")
+	return b.String()
 }
