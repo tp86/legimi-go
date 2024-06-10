@@ -3,6 +3,7 @@ package commands
 import (
 	"flag"
 	"fmt"
+	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -27,6 +28,7 @@ var (
 	Commands = []Command{
 		{name: "list", Run: listBooks, description: "list books on shelf"},
 		{name: "download", args: "id ...", Run: downloadBooks, description: "download book(s) with given id(s)"},
+		{name: "version", Run: printVersion, description: "print version of script"},
 	}
 )
 
@@ -87,4 +89,13 @@ func downloadBooks() error {
 		bookIds[i] = v
 	}
 	return BookDownloader.DownloadBooks(bookIds)
+}
+
+func printVersion() error {
+	if info, ok := debug.ReadBuildInfo(); !ok {
+		return fmt.Errorf("Error getting version info")
+	} else {
+		fmt.Printf("Legimi-go version: %s\n", info.Main.Version)
+	}
+	return nil
 }
