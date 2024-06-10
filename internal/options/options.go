@@ -8,3 +8,7 @@ type Credentials interface {
 type Configuration interface {
 	GetFile() string
 }
+
+type Debugging interface {
+	IsDebug() bool
+}

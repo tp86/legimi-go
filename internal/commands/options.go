@@ -32,6 +32,10 @@ func (o options) GetFile() string {
 	return o.configurationFile
 }
 
+func (o options) IsDebug() bool {
+	return o.debugging
+}
+
 func configureFlags() {
 	flag.Usage = usage
 	flag.StringVar(&Options.configurationFile, "config", defaultConfigurationFile(), "path to configuration file")

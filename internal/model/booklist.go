@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/tp86/legimi-go/internal/api/protocol/encoding"
 )
@@ -51,6 +52,24 @@ func (l BookListRequest) EncodedLength() int {
 
 func (l BookListRequest) Type() uint16 {
 	return 0x001a
+}
+
+func (l BookListRequest) DebugFormat() string {
+	var b strings.Builder
+	b.WriteString("List books request:\n")
+	filters := makeFilters(l)
+	b.WriteString("requested page: ")
+	b.WriteString(l.NextPage)
+	b.WriteString("\n")
+	b.WriteString("filters: ")
+	for _, filter := range filters {
+		b.WriteString(fmt.Sprintf("%02X ", filter.Type))
+		b.WriteString(fmt.Sprintf("%02X ", filter.Subtype))
+		b.WriteString(fmt.Sprintf("%02X ", filter.Data))
+	}
+	b.WriteString("\n")
+	b.WriteString(fmt.Sprintf("requested book id: %d", l.BookId))
+	return b.String()
 }
 
 type filter struct {
