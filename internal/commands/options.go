@@ -15,6 +15,7 @@ type options struct {
 	login             string
 	password          string
 	configurationFile string
+	debugging         bool
 }
 
 var Options options
@@ -31,11 +32,16 @@ func (o options) GetFile() string {
 	return o.configurationFile
 }
 
+func (o options) IsDebug() bool {
+	return o.debugging
+}
+
 func configureFlags() {
 	flag.Usage = usage
 	flag.StringVar(&Options.configurationFile, "config", defaultConfigurationFile(), "path to configuration file")
 	flag.StringVar(&Options.login, "login", "", "Legimi login")
 	flag.StringVar(&Options.password, "password", "", "Legimi password")
+	flag.BoolVar(&Options.debugging, "debug", false, "print debugging information")
 }
 
 func flagPrint(what string) {

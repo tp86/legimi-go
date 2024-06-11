@@ -12,7 +12,7 @@ import (
 
 func configure() {
 	accountRepository := ar.GetFileRepository(commands.Options)
-	apiClient := api.GetClient()
+	apiClient := api.GetClient(commands.Options)
 	accountService := as.DefaultService(accountRepository, apiClient, commands.Options)
 	sessionService := session.DefaultService(accountService, apiClient)
 	bookDownloadPresenter := presenter.DefaultBookDownloadPresenter()

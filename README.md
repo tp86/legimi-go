@@ -61,6 +61,12 @@ All command line switches are optional.
     Same logic as for login applies.
     Note that login and password are stored in configuration file as plain text.
 
+-   `--debug`
+
+    Enable debugging mode.
+    In debugging mode, selected information about exchanged requests and responses is printed to stderr.
+    Currently, probably the most useful information is contained within session response.
+
 > [!NOTE]
 > You can give switches with one (`-config`) or two dashes (`--config`).
 
@@ -75,6 +81,10 @@ Available commands are:
 -   `download <id> ...`
 
     Download book(s) given their id(s). Book id can be obtained by listing books (first value in book entry line).
+
+-   `version`
+
+    Print legimi-go version.
 
 Providing command is mandatory, there is no default command.
 
@@ -92,7 +102,7 @@ Legimi Kindle Id will be automatically queried and stored in configuration file 
 
     If you're running script for the first time, or passing configuration file that does not have credentials yet, you will be prompted for login and password.
 
-2.  Download selected book
+2.  Download selected book(s)
 
     ```shell
     $ legimi-go download <book-id>
@@ -113,10 +123,17 @@ Obviously, only subset of functionality of official Legimi app is supported.
 
 Most error responses are not recognized / handled yet. This should improve in the future.
 
-Script does not provide a way to create account or register device unknown to the Legimi service. You should use official app for this.
+Script is not intended to create account or register device unknown to the Legimi service. You should use official app for this.
+Device registration works, but may cause issues.
 
-There is no information about limit of book downloads in subscription period.
+If you want to know how many book downloads are left in subscription period, you can use `-debug` switch and look for `downloads left` information under `Session response` section.
 If you are trying to download more books than you limit, Legimi service will block downloads.
+
+## Troubleshooting
+
+If something is not working as expected, try to use `-debug` switch to get more information.
+
+Official Legimi app should be checked also, as it is a reference point. Using official app can also potentially fix issues (https://github.com/tp86/legimi-go/issues/3#issuecomment-2159820160).
 
 ## Background
 
