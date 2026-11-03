@@ -109,35 +109,118 @@ func (bs defaultBookService) getBookDownloadDetails(sessionId string, book model
 	return bookDownloadDetails, nil
 }
 
-const downloadChunkSize uint64 = 81920
+const (
+	downloadChunkSize                  uint64 = 81920
+	maxDownloadAttemptsWithoutProgress        = 5
+)
+
+// variable, so that tests don't have to wait
+var downloadRetryDelay = 2 * time.Second
 
 func (bs defaultBookService) download(book model.BookMetadata, downloadDetails model.BookDownloadDetails) error {
 	bs.downloadPresenter.Start(book)
-	file, err := os.Create(fmt.Sprintf("%d.mobi", book.Id))
+	fileName := fmt.Sprintf("%d.mobi", book.Id)
+	// download to temporary file, so that incomplete download never looks like a book
+	partFileName := fileName + ".part"
+	file, err := os.Create(partFileName)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	err = bs.downloadTo(file, book, downloadDetails)
+	if closeErr := file.Close(); err == nil {
+		err = closeErr
+	}
+	if err == nil {
+		err = os.Rename(partFileName, fileName)
+	}
+	if err != nil {
+		os.Remove(partFileName)
+		return err
+	}
+	bs.downloadPresenter.End(book)
+	return nil
+}
+
+func (bs defaultBookService) downloadTo(file *os.File, book model.BookMetadata, downloadDetails model.BookDownloadDetails) error {
 	client := http.Client{Timeout: 30 * time.Second}
 	request, err := http.NewRequest(http.MethodGet, downloadDetails.Url, nil)
 	if err != nil {
 		return err
 	}
 	var downloadedBytes uint64 = 0
-	for i := uint64(0); downloadedBytes < downloadDetails.Size; i++ {
-		request.Header.Set("range", fmt.Sprintf("bytes=%d-%d", i*downloadChunkSize, min((i+1)*downloadChunkSize-1, downloadDetails.Size)))
-		response, err := client.Do(request)
-		if err != nil {
-			return err
+	attemptsWithoutProgress := 0
+	for downloadedBytes < downloadDetails.Size {
+		if attemptsWithoutProgress > 0 {
+			time.Sleep(downloadRetryDelay)
 		}
-		bytesRead, err := file.ReadFrom(response.Body)
-		response.Body.Close()
-		if err != nil {
-			return err
-		}
+		// always continue from bytes actually received, chunk may come back short
+		request.Header.Set("range", fmt.Sprintf("bytes=%d-%d", downloadedBytes, min(downloadedBytes+downloadChunkSize, downloadDetails.Size)-1))
+		bytesRead, err := downloadChunk(client, request, file, downloadedBytes, downloadDetails.Size)
 		downloadedBytes += uint64(bytesRead)
-		bs.downloadPresenter.Part(book)
+		if bytesRead > 0 {
+			attemptsWithoutProgress = 0
+			bs.downloadPresenter.Part(book)
+			continue
+		}
+		if err, ok := err.(fatalDownloadError); ok {
+			return err
+		}
+		attemptsWithoutProgress++
+		if attemptsWithoutProgress == maxDownloadAttemptsWithoutProgress {
+			if err == nil {
+				err = errors.New("no data received")
+			}
+			return fmt.Errorf("download of book %d stalled at %d of %d bytes: %w", book.Id, downloadedBytes, downloadDetails.Size, err)
+		}
 	}
-	bs.downloadPresenter.End(book)
+	if downloadedBytes != downloadDetails.Size {
+		return fmt.Errorf("downloaded %d bytes of book %d, expected %d", downloadedBytes, book.Id, downloadDetails.Size)
+	}
+	return nil
+}
+
+// fatalDownloadError is returned for errors that wouldn't go away by repeating request
+type fatalDownloadError struct {
+	error
+}
+
+// downloadChunk writes response to requested range into file and returns number of bytes written.
+// Returned bytes count may be non-zero along with error if response was cut off, bytes should be kept then.
+func downloadChunk(client http.Client, request *http.Request, file *os.File, offset, size uint64) (int64, error) {
+	response, err := client.Do(request)
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+	switch {
+	case response.StatusCode == http.StatusPartialContent:
+		if err := checkContentRange(response.Header.Get("content-range"), offset, size); err != nil {
+			return 0, fatalDownloadError{err}
+		}
+	case response.StatusCode == http.StatusOK && offset == 0:
+		// server ignored range and sends whole file
+	case response.StatusCode >= 500:
+		return 0, fmt.Errorf("unexpected response status: %s", response.Status)
+	default:
+		return 0, fatalDownloadError{fmt.Errorf("unexpected response status: %s", response.Status)}
+	}
+	return file.ReadFrom(response.Body)
+}
+
+func checkContentRange(contentRange string, offset, size uint64) error {
+	if contentRange == "" {
+		return nil
+	}
+	var start, end uint64
+	var total string
+	if _, err := fmt.Sscanf(contentRange, "bytes %d-%d/%s", &start, &end, &total); err != nil {
+		return fmt.Errorf("invalid content-range in response: %q", contentRange)
+	}
+	if start != offset {
+		return fmt.Errorf("content-range in response starts at %d, requested %d", start, offset)
+	}
+	if total != "*" && total != fmt.Sprint(size) {
+		return fmt.Errorf("content-range in response has total size %s, expected %d", total, size)
+	}
 	return nil
 }
